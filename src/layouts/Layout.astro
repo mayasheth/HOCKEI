@@ -1,0 +1,60 @@
+---
+import '../styles/global.css'
+
+interface Props {
+  title: string;
+  activePage?: 'feed' | 'rivals';
+}
+
+const { title, activePage = 'feed' } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Track negative events for NHL teams you love to hate" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <title>{title}</title>
+  </head>
+  <body class="min-h-screen">
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 border-b" style="background-color: var(--bg-dark); border-color: var(--border-subtle);">
+      <div class="max-w-2xl mx-auto px-4">
+        <div class="flex items-center justify-between h-12">
+          <!-- Logo/Title -->
+          <a href="/" class="text-base font-bold tracking-tight uppercase headline" style="color: var(--accent-red);">
+            Rival Watch
+          </a>
+
+          <!-- Navigation Links -->
+          <div class="flex gap-6">
+            <a
+              href="/"
+              class={`nav-link text-sm font-medium ${activePage === 'feed' ? 'active' : ''}`}
+              style={`color: ${activePage === 'feed' ? 'var(--text-primary)' : 'var(--text-secondary)'};`}
+            >
+              Feed
+            </a>
+            <a
+              href="/rivals"
+              class={`nav-link text-sm font-medium ${activePage === 'rivals' ? 'active' : ''}`}
+              style={`color: ${activePage === 'rivals' ? 'var(--text-primary)' : 'var(--text-secondary)'};`}
+            >
+              Rivals
+            </a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-12 min-h-screen">
+      <slot />
+    </main>
+  </body>
+</html>

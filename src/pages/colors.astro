@@ -1,0 +1,78 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { teamColors, getTeamColors } from '../lib/teamColors.js';
+
+const teams = Object.keys(teamColors).filter(t => t !== 'ARI'); // Skip ARI (duplicate of UTA)
+---
+
+<Layout title="Team Color Review" activePage="feed">
+  <div class="max-w-4xl mx-auto px-4 py-6">
+    <h1 class="text-xl font-bold mb-6" style="color: var(--text-primary);">Team Color Review (32 teams)</h1>
+
+    <div class="grid gap-4">
+      {teams.map((abbrev) => {
+        const colors = getTeamColors(abbrev);
+        const rawColors = teamColors[abbrev];
+        const hasDarkMode = !!rawColors.darkMode;
+        return (
+          <div class="card goal-card overflow-hidden" style={`border-left: 6px solid ${colors.primary};`}>
+            <!-- Header bar -->
+            <div class="flex items-center justify-between px-4 py-2" style={`background: ${colors.primary}10; border-bottom: 1px solid ${colors.primary}20;`}>
+              <span class="text-sm tracking-wider uppercase">
+                <span class="headline font-bold" style={`color: ${colors.primary};`}>{abbrev}</span>
+                <span style="color: var(--text-muted);"> • Goal Against</span>
+              </span>
+              <div class="flex items-center gap-2">
+                <span class="text-xs" style="color: var(--text-muted);">2nd 14:32</span>
+                <span class="text-xs px-1.5 py-0.5 rounded uppercase font-semibold" style="background: rgba(255,255,255,0.1); color: white;">PP</span>
+              </div>
+            </div>
+            <!-- Body -->
+            <div class="p-4">
+              <div class="flex items-center gap-4">
+                <!-- Team logo with glow -->
+                <div class="relative flex-shrink-0">
+                  <div class="absolute inset-0 rounded-full" style={`background: radial-gradient(circle, ${colors.primary}50 0%, transparent 70%); filter: blur(12px); transform: translateY(4px);`}></div>
+                  <img
+                    src={`/logos/${abbrev.toLowerCase()}.png`}
+                    alt={abbrev}
+                    class="relative w-14 h-14 object-contain"
+                    style="opacity: 0.6; filter: saturate(0.7);"
+                  />
+                </div>
+                <!-- Arrows -->
+                <div class="flex items-center gap-1" style="color: #E53935;">
+                  <span style="font-size: 10px;">◀</span>
+                  <span style="font-size: 10px;">◀</span>
+                  <span style="font-size: 10px;">◀</span>
+                </div>
+                <!-- Scorer info -->
+                <div class="flex items-center gap-2">
+                  <img src="/logos/nyr.png" alt="NYR" class="w-6 h-6 object-contain" />
+                  <div>
+                    <p class="text-sm font-medium" style="color: var(--text-primary);">Sample Player</p>
+                    <p class="text-xs" style="color: var(--text-muted);">wrist</p>
+                  </div>
+                </div>
+                <!-- Color info -->
+                <div class="ml-auto text-right text-xs" style="color: var(--text-muted);">
+                  {hasDarkMode ? (
+                    <>
+                      <p>darkMode: <span style={`color: ${colors.primary};`}>{colors.primary}</span> <span class="text-green-400">✓</span></p>
+                      <p>original: <span style={`color: ${rawColors.primary};`}>{rawColors.primary}</span></p>
+                    </>
+                  ) : (
+                    <>
+                      <p>Primary: <span style={`color: ${colors.primary};`}>{colors.primary}</span></p>
+                      <p>Secondary: <span style={`color: ${colors.secondary};`}>{colors.secondary}</span></p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+</Layout>
