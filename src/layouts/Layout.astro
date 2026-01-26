@@ -25,10 +25,11 @@ const { title, activePage = 'feed' } = Astro.props;
     <!-- Navigation -->
     <nav class="fixed top-0 left-0 right-0 z-50 border-b" style="background-color: var(--bg-dark); border-color: var(--border-subtle);">
       <div class="max-w-2xl mx-auto px-4">
-        <div class="flex items-center justify-between h-12">
+        <div class="flex items-center justify-between h-14">
           <!-- Logo/Title -->
-          <a href="/" class="text-base font-bold tracking-tight uppercase headline" style="color: var(--accent-red);">
-            Rival Watch
+          <a href="/" class="flex flex-col">
+            <span class="text-base font-bold tracking-tight uppercase headline" style="color: var(--accent-red);">HOCKEI</span>
+            <span class="text-[9px] tracking-wide" style="color: var(--text-muted);">Highly Optimized Coverage of Key Events (Impartial)</span>
           </a>
 
           <!-- Navigation Links -->
@@ -53,7 +54,7 @@ const { title, activePage = 'feed' } = Astro.props;
     </nav>
 
     <!-- Main Content -->
-    <main class="pt-12 min-h-screen">
+    <main class="pt-14 min-h-screen">
       <slot />
     </main>
   </body>

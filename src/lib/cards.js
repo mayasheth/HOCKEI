@@ -56,10 +56,10 @@ export function createGoalCard(event) {
             />
           </div>
           <!-- Arrows pointing at rival -->
-          <div class="flex items-center gap-1" style="color: ${accentRed};">
-            <span style="font-size: 10px;">◀</span>
-            <span style="font-size: 10px;">◀</span>
-            <span style="font-size: 10px;">◀</span>
+          <div class="flex items-center gap-1">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="${accentRed}"><polygon points="10,0 10,10 0,5"/></svg>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="${accentRed}"><polygon points="10,0 10,10 0,5"/></svg>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="${accentRed}"><polygon points="10,0 10,10 0,5"/></svg>
           </div>
           <!-- Scorer info -->
           <div class="flex items-center gap-2">
@@ -108,8 +108,8 @@ export function createLossCard(event) {
           />
           <div class="flex items-center gap-3">
             <span class="headline text-3xl font-bold tabular-nums" style="color: var(--text-muted);">${event.rivalScore}</span>
-            <div class="flex items-center gap-1" style="color: ${accentRed};">
-              <span style="font-size: 20px;">◀</span>
+            <div class="flex items-center">
+              <svg width="20" height="20" viewBox="0 0 10 10" fill="${accentRed}"><polygon points="10,0 10,10 0,5"/></svg>
             </div>
             <span class="headline text-3xl font-bold tabular-nums" style="color: var(--text-primary);">${event.opponentScore}</span>
           </div>

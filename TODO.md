@@ -1,6 +1,11 @@
-# Rival Watch - Feature Backlog
+# HOCKEI - Feature Backlog
 
 ## Priority Features
+
+- [x] fix arrow symbols showing as emoji on iOS instead of icon - use consistent red icon styling
+- [x] update branding to new name (HOCKEI, Highly Optimized Coverage of Key Events (Impartial))
+- [x] update CLAUDE.md with current code structure
+- [ ] move the color/preview page to be on a preview/temp branch, not main
 
 ### New Cards
 - [ ] **Losing Streak Card** - Show when a rival is on a losing streak (e.g., "3 straight losses")
@@ -30,13 +35,11 @@
 
 ### Cards & Feed
 - [ ] Video highlight playback for goals
-- [ ] Custom loading messages ("Gathering tears...", etc.)
 
 ### Technical
 - [ ] Responsive design improvements for mobile
-- [ ] PWA support (installable web app)
+- [ ] PWA support (installable web app, push notifications?)
 - [ ] API response caching
-- [ ] Image lazy loading
 
 ### Future Ideas
 - [ ] Random hyper-specific stats generator

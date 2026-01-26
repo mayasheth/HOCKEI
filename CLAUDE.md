@@ -1,86 +1,42 @@
 # HOCKEI: Highly Optimized Coverage of Key Events (Impartial)
 
-## Overview
-Web version of **Rival Watch**, ported from the iOS app. A schadenfreude app for NHL fans to track negative events (losses, goals against) for teams they dislike.
+Schadenfreude app for NHL fans to track negative events (losses, goals against) for rival teams. Web port of iOS app "Rival Watch".
 
 ## Tech Stack
-- **Astro** - Static-first framework with islands architecture
-- **Tailwind CSS v4** - Utility-first styling
-- **Vercel** - Serverless deployment (handles CORS proxy)
-- **No frameworks** - Vanilla JS for interactivity
+Astro + Tailwind CSS v4 + Vanilla JS, deployed on Vercel
 
-## Project Structure
+## Structure
 ```
-random-nhl/
-├── src/
-│   ├── pages/
-│   │   ├── index.astro         # Main feed page
-│   │   ├── rivals.astro        # Team selection page
-│   │   └── api/nhl/[...path].js # CORS proxy for NHL API
-│   ├── layouts/
-│   │   └── Layout.astro        # Base layout with nav
-│   ├── lib/
-│   │   ├── nhl.js              # NHL API service (ported from Swift)
-│   │   ├── store.js            # localStorage persistence
-│   │   └── teamColors.js       # Team color definitions
-│   └── styles/
-│       └── global.css          # Tailwind + custom styles
-├── public/
-│   └── logos/                  # 32 team PNGs (from iOS assets)
-├── astro.config.mjs
-└── package.json
+src/
+├── pages/
+│   ├── index.astro          # Main feed - displays goal/loss cards
+│   ├── rivals.astro         # Team selection grid
+│   ├── colors.astro         # Dev page for color testing (move to temp branch)
+│   └── api/nhl/[...path].js # CORS proxy → api-web.nhle.com/v1/*
+├── layouts/
+│   └── Layout.astro         # Nav + page wrapper
+├── lib/
+│   ├── nhl.js               # NHL API: fetchTeams, fetchScores, fetchPlayByPlay, fetchNegativeEvents
+│   ├── cards.js             # HTML generators: createGoalCard, createLossCard, createDayHeader
+│   ├── store.js             # localStorage: getSelectedRivals, toggleRival, clearAllRivals
+│   └── teamColors.js        # Team colors map + getTeamColors(abbrev), accentRed
+└── styles/
+    └── global.css           # CSS variables, card styles, animations
+public/
+└── logos/                   # 32 team PNGs (lowercase abbrev: tor.png, bos.png)
 ```
 
-## Key Files
-
-### `src/lib/nhl.js`
-Ported from iOS `NHLAPIService.swift`. Key functions:
-- `fetchTeams()` - Get all NHL teams from standings
-- `fetchScores(date)` - Get scores for a specific date
-- `fetchPlayByPlay(gameId)` - Get shot type details
-- `fetchNegativeEvents(rivals, days)` - Main function that builds the feed
-
-### `src/lib/store.js`
-Simple localStorage wrapper for selected rivals:
-- `getSelectedRivals()` - Returns `Set<string>` of abbreviations
-- `toggleRival(abbrev)` - Toggle selection, returns updated set
-- `clearAllRivals()` - Clear all selections
-
-### `src/pages/api/nhl/[...path].js`
-Serverless proxy to bypass CORS. Routes:
-- `/api/nhl/standings/now` → `api-web.nhle.com/v1/standings/now`
-- `/api/nhl/score/{date}` → `api-web.nhle.com/v1/score/{date}`
-- etc.
-
-## Design System
-
-### Colors (CSS Variables)
-- `--bg-dark`: `rgb(31, 31, 31)` - Main background
-- `--bg-card`: `rgb(13, 13, 13)` - Card background
-- `--accent-red`: `#CD5C5C` - Muted red accent
-- `--text-primary`: `rgba(255, 255, 255, 0.95)`
-- `--text-secondary`: `rgba(255, 255, 255, 0.7)`
-- `--text-muted`: `rgba(255, 255, 255, 0.5)`
-
-### Components
-- **GoalCard**: Compact, shows scorer + shot type + period/time, left border in team color
-- **LossCard**: Large with pulsing glow, team logo + score prominent
+## Key Patterns
+- Team IDs use 3-letter abbreviations (TOR, BOS, NYR)
+- NHL API base: `https://api-web.nhle.com/v1` (proxied via `/api/nhl/*`)
+- Colors: `--bg-dark` (31,31,31), `--bg-card` (13,13,13), `--accent-red` (#CD5C5C)
 
 ## Commands
 ```bash
-# Development
-npm run dev
-
-# Build
-npm run build
-
-# Preview build
-npm run preview
+npm run dev      # Start dev server
+npm run build    # Production build
+npm run preview  # Preview build
 ```
 
-## Deployment
-Push to GitHub, connect to Vercel. The `@astrojs/vercel` adapter handles serverless functions automatically.
-
 ## Related
-- iOS app: `/Users/shethm/Documents/nhl-rivals/RivalWatch`
-- Same NHL API: `https://api-web.nhle.com/v1`
+iOS source: `/Users/shethm/Documents/nhl-rivals/RivalWatch`
