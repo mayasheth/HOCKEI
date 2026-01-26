@@ -5,19 +5,19 @@
 - [x] fix arrow symbols showing as emoji on iOS instead of icon - use consistent red icon styling
 - [x] update branding to new name (HOCKEI, Highly Optimized Coverage of Key Events (Impartial))
 - [x] update CLAUDE.md with current code structure
-- [ ] move the color/preview page to be on a preview/temp branch, not main
+- [x] move the color/preview page to be on a preview/temp branch, not main
 
 ### New Cards
-- [ ] **Losing Streak Card** - Show when a rival is on a losing streak (e.g., "3 straight losses")
+- [x] **Losing Streak Card** - Loss cards show streak footer when team has 3+ consecutive losses
 - [ ] **Playoff Position Card** - Alert when a rival falls out of a playoff spot
 - [ ] **Short-Handed Goal Formatting** - Extra emphasis for SHG against rivals (extra embarrassing)
 
 ### New Pages
-- [ ] **Rival Stats Page** - Statistics highlighting how bad your rivals are (win %, goals against, standings, streaks)
+- [ ] **Rival Stats Page** - Statistics highlighting how bad your rivals are (win %, goals against, standings, streaks); is your rival team an OT merchant?
 
 ### UX Improvements
-- [ ] **Card Animations** - More visually appealing card entrances and transitions
-- [ ] **Auto-Refresh** - Automatically refresh feed for live game updates
+- [x] **Card Animations** - Scale pop animation for new cards during live updates
+- [x] **Auto-Refresh** - Automatically refresh feed for live game updates (20s live, 5min idle)
 
 ---
 

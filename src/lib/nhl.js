@@ -33,6 +33,40 @@ export async function fetchTeams() {
 }
 
 /**
+ * Calculate current losing streak for a team (counts both regulation and OT losses)
+ * @param {string} teamAbbrev - Team abbreviation
+ * @returns {Promise<number>} Current losing streak (0 if not on a losing streak)
+ */
+export async function fetchLosingStreak(teamAbbrev) {
+  try {
+    const res = await fetch(`${API_BASE}/club-schedule-season/${teamAbbrev}/now`);
+    if (!res.ok) return 0;
+    const data = await res.json();
+
+    // Get completed games, sorted most recent first
+    const completed = (data.games || [])
+      .filter(g => g.gameState === 'OFF' || g.gameState === 'FINAL')
+      .sort((a, b) => new Date(b.gameDate) - new Date(a.gameDate));
+
+    let streak = 0;
+    for (const game of completed) {
+      const isHome = game.homeTeam.abbrev === teamAbbrev;
+      const teamScore = isHome ? game.homeTeam.score : game.awayTeam.score;
+      const oppScore = isHome ? game.awayTeam.score : game.homeTeam.score;
+
+      if (teamScore < oppScore) {
+        streak++;
+      } else {
+        break; // Streak ended
+      }
+    }
+    return streak;
+  } catch {
+    return 0;
+  }
+}
+
+/**
  * Fetch scores for a specific date
  * @param {Date|null} date - Date to fetch, or null for current
  * @returns {Promise<Array>}
@@ -46,6 +80,19 @@ export async function fetchScores(date = null) {
   if (!res.ok) throw new Error('Failed to fetch scores');
   const data = await res.json();
   return data.games || [];
+}
+
+/**
+ * Check if any games are currently live
+ * @returns {Promise<boolean>}
+ */
+export async function hasLiveGames() {
+  try {
+    const games = await fetchScores();
+    return games.some(g => g.gameState === 'LIVE' || g.gameState === 'CRIT');
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -104,6 +151,7 @@ function getPeriodDisplay(period, periodDescriptor) {
 export async function fetchNegativeEvents(rivalAbbreviations, days = 3) {
   const events = [];
   const today = new Date();
+  const streakCache = new Map(); // Cache streak lookups per team
 
   for (let dayOffset = 0; dayOffset < days; dayOffset++) {
     const currentDate = new Date(today);
@@ -151,9 +199,21 @@ export async function fetchNegativeEvents(rivalAbbreviations, days = 3) {
           const awayScore = game.awayTeam.score ?? 0;
 
           if (homeIsRival && homeScore < awayScore) {
-            events.push(buildLossEvent(game, game.homeTeam, homeScore, game.awayTeam, awayScore, true));
+            // Fetch losing streak (cached)
+            const abbrev = game.homeTeam.abbrev;
+            if (!streakCache.has(abbrev)) {
+              streakCache.set(abbrev, fetchLosingStreak(abbrev));
+            }
+            const streak = await streakCache.get(abbrev);
+            events.push(buildLossEvent(game, game.homeTeam, homeScore, game.awayTeam, awayScore, true, streak));
           } else if (awayIsRival && awayScore < homeScore) {
-            events.push(buildLossEvent(game, game.awayTeam, awayScore, game.homeTeam, homeScore, false));
+            // Fetch losing streak (cached)
+            const abbrev = game.awayTeam.abbrev;
+            if (!streakCache.has(abbrev)) {
+              streakCache.set(abbrev, fetchLosingStreak(abbrev));
+            }
+            const streak = await streakCache.get(abbrev);
+            events.push(buildLossEvent(game, game.awayTeam, awayScore, game.homeTeam, homeScore, false, streak));
           }
         }
       }
@@ -215,7 +275,7 @@ function buildGoalAgainstEvent(game, goal, rivalTeam, opponentTeam, isHomeGame, 
 /**
  * Build a loss event object
  */
-function buildLossEvent(game, rivalTeam, rivalScore, opponentTeam, opponentScore, isHomeGame) {
+function buildLossEvent(game, rivalTeam, rivalScore, opponentTeam, opponentScore, isHomeGame, losingStreak = 0) {
   return {
     id: `loss-${game.id}`,
     type: 'loss',
@@ -235,6 +295,7 @@ function buildLossEvent(game, rivalTeam, rivalScore, opponentTeam, opponentScore
     isHomeGame,
     highlightURL: null,
     shotType: null,
-    strength: null
+    strength: null,
+    losingStreak
   };
 }

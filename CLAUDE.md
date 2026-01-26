@@ -9,19 +9,18 @@ Astro + Tailwind CSS v4 + Vanilla JS, deployed on Vercel
 ```
 src/
 ├── pages/
-│   ├── index.astro          # Main feed - displays goal/loss cards
+│   ├── index.astro          # Main feed with auto-refresh polling
 │   ├── rivals.astro         # Team selection grid
-│   ├── colors.astro         # Dev page for color testing (move to temp branch)
 │   └── api/nhl/[...path].js # CORS proxy → api-web.nhle.com/v1/*
 ├── layouts/
 │   └── Layout.astro         # Nav + page wrapper
 ├── lib/
-│   ├── nhl.js               # NHL API: fetchTeams, fetchScores, fetchPlayByPlay, fetchNegativeEvents
-│   ├── cards.js             # HTML generators: createGoalCard, createLossCard, createDayHeader
+│   ├── nhl.js               # NHL API: fetchTeams, fetchScores, fetchPlayByPlay, fetchNegativeEvents, hasLiveGames
+│   ├── cards.js             # HTML generators: createGoalCard(event, isNew), createLossCard(event, isNew)
 │   ├── store.js             # localStorage: getSelectedRivals, toggleRival, clearAllRivals
 │   └── teamColors.js        # Team colors map + getTeamColors(abbrev), accentRed
 └── styles/
-    └── global.css           # CSS variables, card styles, animations
+    └── global.css           # CSS variables, card styles, animations (card-enter for new cards)
 public/
 └── logos/                   # 32 team PNGs (lowercase abbrev: tor.png, bos.png)
 ```
@@ -29,7 +28,13 @@ public/
 ## Key Patterns
 - Team IDs use 3-letter abbreviations (TOR, BOS, NYR)
 - NHL API base: `https://api-web.nhle.com/v1` (proxied via `/api/nhl/*`)
-- Colors: `--bg-dark` (31,31,31), `--bg-card` (13,13,13), `--accent-red` (#CD5C5C)
+- NHL API `gameState` values: FUT (future), PRE (pre-game), LIVE, CRIT (critical), OFF/FINAL (finished)
+- Colors: `--bg-dark`, `--bg-card`, `--accent-red` (see global.css for values)
+
+## Key Behaviors
+- **Auto-refresh**: Polls every 20s during live games, 5min otherwise. Pauses when tab hidden.
+- **Incremental updates**: Feed tracks event IDs; new cards animate in (scale pop), existing cards stay put.
+- **Cards**: Pass `isNew=true` to card functions to trigger `card-enter` animation class.
 
 ## Commands
 ```bash
@@ -40,3 +45,6 @@ npm run preview  # Preview build
 
 ## Related
 iOS source: `/Users/shethm/Documents/nhl-rivals/RivalWatch`
+Useful NHL API resources:
+- https://github.com/Zmalski/NHL-API-Reference
+- https://github.com/coreyjs/nhl-api-py 

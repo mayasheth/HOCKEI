@@ -48,15 +48,24 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
-  import { fetchNegativeEvents } from '../lib/nhl.js';
+  import { fetchNegativeEvents, hasLiveGames } from '../lib/nhl.js';
   import { getSelectedRivals } from '../lib/store.js';
   import { createGoalCard, createLossCard, createDayHeader } from '../lib/cards.js';
+
+  // Polling intervals
+  const LIVE_INTERVAL = 20000;    // 20 seconds when live games
+  const IDLE_INTERVAL = 300000;   // 5 minutes otherwise
 
   const loading = document.getElementById('loading');
   const empty = document.getElementById('empty');
   const noEvents = document.getElementById('no-events');
   const feed = document.getElementById('feed');
   const refreshBtn = document.getElementById('refresh-btn');
+
+  let pollIntervalId = null;
+  let isLive = false;
+  let currentEventIds = new Set();
+  let isInitialLoad = true;
 
   function formatDate(dateString) {
     const date = new Date(dateString);
@@ -84,19 +93,73 @@ import Layout from '../layouts/Layout.astro';
     return groups;
   }
 
+  /**
+   * Render feed with incremental updates
+   * - Initial load: render all without animation
+   * - Subsequent loads: keep existing cards, animate new ones
+   */
+  function renderFeed(events) {
+    const newEventIds = new Set(events.map(e => e.id));
+    const grouped = groupEventsByDay(events);
+
+    if (isInitialLoad) {
+      // First load: render everything without animation
+      let html = '';
+      for (const [dateStr, dayEvents] of grouped) {
+        html += createDayHeader(dateStr);
+        for (const event of dayEvents) {
+          html += event.type === 'loss'
+            ? createLossCard(event, false)
+            : createGoalCard(event, false);
+        }
+      }
+      feed.innerHTML = html;
+      currentEventIds = newEventIds;
+      isInitialLoad = false;
+      return;
+    }
+
+    // Find new events (not in current feed)
+    const newEvents = events.filter(e => !currentEventIds.has(e.id));
+
+    if (newEvents.length === 0) {
+      // No new events, nothing to update
+      return;
+    }
+
+    // Rebuild entire feed, marking new cards for animation
+    let html = '';
+    for (const [dateStr, dayEvents] of grouped) {
+      html += createDayHeader(dateStr);
+      for (const event of dayEvents) {
+        const isNew = !currentEventIds.has(event.id);
+        html += event.type === 'loss'
+          ? createLossCard(event, isNew)
+          : createGoalCard(event, isNew);
+      }
+    }
+    feed.innerHTML = html;
+    currentEventIds = newEventIds;
+  }
+
   async function loadFeed() {
     const rivals = getSelectedRivals();
 
-    // Show appropriate state
-    loading.classList.remove('hidden');
-    empty.classList.add('hidden');
-    noEvents.classList.add('hidden');
-    feed.classList.add('hidden');
-    // Keep mockups visible for comparison
+    // Only show loading spinner on initial load
+    if (isInitialLoad) {
+      loading.classList.remove('hidden');
+      empty.classList.add('hidden');
+      noEvents.classList.add('hidden');
+      feed.classList.add('hidden');
+    }
 
     if (rivals.size === 0) {
       loading.classList.add('hidden');
       empty.classList.remove('hidden');
+      noEvents.classList.add('hidden');
+      feed.classList.add('hidden');
+      currentEventIds = new Set();
+      isInitialLoad = true;
       return;
     }
 
@@ -104,39 +167,48 @@ import Layout from '../layouts/Layout.astro';
       const events = await fetchNegativeEvents(rivals, 3);
 
       loading.classList.add('hidden');
+      empty.classList.add('hidden');
 
       if (events.length === 0) {
         noEvents.classList.remove('hidden');
+        feed.classList.add('hidden');
+        currentEventIds = new Set();
+        isInitialLoad = true;
         return;
       }
 
-      // Group events by day
-      const grouped = groupEventsByDay(events);
-
-      // Build feed HTML
-      let html = '';
-      for (const [dateStr, dayEvents] of grouped) {
-        html += createDayHeader(dateStr);
-        for (const event of dayEvents) {
-          if (event.type === 'loss') {
-            html += createLossCard(event);
-          } else {
-            html += createGoalCard(event);
-          }
-        }
-      }
-
-      feed.innerHTML = html;
+      noEvents.classList.add('hidden');
       feed.classList.remove('hidden');
+      renderFeed(events);
     } catch (error) {
       console.error('Failed to load feed:', error);
-      loading.classList.add('hidden');
-      noEvents.classList.remove('hidden');
+      // On error during refresh, keep existing content visible
+      if (isInitialLoad) {
+        loading.classList.add('hidden');
+        noEvents.classList.remove('hidden');
+      }
     }
   }
 
+  // Polling management
+  async function updatePolling() {
+    isLive = await hasLiveGames();
+    const interval = (document.hidden || !isLive) ? IDLE_INTERVAL : LIVE_INTERVAL;
+
+    if (pollIntervalId) clearInterval(pollIntervalId);
+    pollIntervalId = setInterval(loadFeed, interval);
+  }
+
+  // Visibility change handler
+  document.addEventListener('visibilitychange', async () => {
+    if (!document.hidden) {
+      await loadFeed();
+    }
+    updatePolling();
+  });
+
   // Initial load
-  loadFeed();
+  loadFeed().then(updatePolling);
 
   // Refresh button
   refreshBtn?.addEventListener('click', loadFeed);

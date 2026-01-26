@@ -1,0 +1,214 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { createGoalCard, createLossCard, createDayHeader } from '../lib/cards.js';
+
+// Mock events for testing all card states
+const mockEvents = {
+  // Goal cards
+  goalNormal: {
+    id: 'goal-test-1',
+    type: 'goalAgainst',
+    teamAbbreviation: 'BOS',
+    teamName: 'Bruins',
+    opponentAbbreviation: 'MTL',
+    opponentName: 'Canadiens',
+    period: '2nd',
+    timeInPeriod: '14:32',
+    scorerName: 'Cole Caufield',
+    shotType: 'wrist',
+    strength: 'ev',
+  },
+  goalPP: {
+    id: 'goal-test-2',
+    type: 'goalAgainst',
+    teamAbbreviation: 'TOR',
+    teamName: 'Maple Leafs',
+    opponentAbbreviation: 'OTT',
+    opponentName: 'Senators',
+    period: '1st',
+    timeInPeriod: '08:15',
+    scorerName: 'Brady Tkachuk',
+    shotType: 'slap',
+    strength: 'pp',
+  },
+  goalSHG: {
+    id: 'goal-test-3',
+    type: 'goalAgainst',
+    teamAbbreviation: 'NYR',
+    teamName: 'Rangers',
+    opponentAbbreviation: 'NYI',
+    opponentName: 'Islanders',
+    period: '3rd',
+    timeInPeriod: '02:44',
+    scorerName: 'Mathew Barzal',
+    shotType: 'snap',
+    strength: 'sh',
+  },
+  // Loss cards
+  lossNormal: {
+    id: 'loss-test-1',
+    type: 'loss',
+    teamAbbreviation: 'PHI',
+    teamName: 'Flyers',
+    opponentAbbreviation: 'PIT',
+    opponentName: 'Penguins',
+    rivalScore: 2,
+    opponentScore: 5,
+    losingStreak: 1,
+  },
+  lossStreak3: {
+    id: 'loss-test-2',
+    type: 'loss',
+    teamAbbreviation: 'TOR',
+    teamName: 'Maple Leafs',
+    opponentAbbreviation: 'BOS',
+    opponentName: 'Bruins',
+    rivalScore: 1,
+    opponentScore: 4,
+    losingStreak: 3,
+  },
+  lossStreak5: {
+    id: 'loss-test-3',
+    type: 'loss',
+    teamAbbreviation: 'CHI',
+    teamName: 'Blackhawks',
+    opponentAbbreviation: 'DET',
+    opponentName: 'Red Wings',
+    rivalScore: 0,
+    opponentScore: 3,
+    losingStreak: 5,
+  },
+  lossStreak10: {
+    id: 'loss-test-4',
+    type: 'loss',
+    teamAbbreviation: 'SJS',
+    teamName: 'Sharks',
+    opponentAbbreviation: 'LAK',
+    opponentName: 'Kings',
+    rivalScore: 1,
+    opponentScore: 6,
+    losingStreak: 10,
+  },
+};
+---
+
+<Layout title="HOCKEI - Test Page" activePage="feed">
+  <div class="max-w-2xl mx-auto px-4 py-6">
+    <div class="mb-8">
+      <h1 class="text-2xl font-bold mb-2" style="color: var(--text-primary);">Component Test Page</h1>
+      <p style="color: var(--text-muted);">Preview all card states and animations</p>
+    </div>
+
+    <!-- Animation Test -->
+    <section class="mb-10">
+      <h2 class="text-lg font-semibold mb-4" style="color: var(--text-secondary);">Card Entry Animation</h2>
+      <p class="text-sm mb-4" style="color: var(--text-muted);">Click button to insert a new card with scale-pop animation</p>
+      <button
+        id="add-card-btn"
+        class="btn px-4 py-2 text-sm font-medium rounded-lg mb-4"
+        style="background-color: var(--accent-red); color: white;"
+      >
+        Add New Card (with animation)
+      </button>
+      <div id="animation-test" class="space-y-4">
+        <Fragment set:html={createGoalCard(mockEvents.goalNormal, false)} />
+      </div>
+    </section>
+
+    <!-- Goal Cards -->
+    <section class="mb-10">
+      <Fragment set:html={createDayHeader('GOAL CARDS')} />
+      <div class="space-y-4 mt-4">
+        <p class="text-xs uppercase tracking-wider" style="color: var(--text-muted);">Even Strength</p>
+        <Fragment set:html={createGoalCard(mockEvents.goalNormal, false)} />
+
+        <p class="text-xs uppercase tracking-wider mt-6" style="color: var(--text-muted);">Power Play (PP)</p>
+        <Fragment set:html={createGoalCard(mockEvents.goalPP, false)} />
+
+        <p class="text-xs uppercase tracking-wider mt-6" style="color: var(--text-muted);">Short-Handed Goal (SHG) - Extra Embarrassing</p>
+        <Fragment set:html={createGoalCard(mockEvents.goalSHG, false)} />
+      </div>
+    </section>
+
+    <!-- Loss Cards -->
+    <section class="mb-10">
+      <Fragment set:html={createDayHeader('LOSS CARDS')} />
+      <div class="space-y-4 mt-4">
+        <p class="text-xs uppercase tracking-wider" style="color: var(--text-muted);">Normal Loss (no streak)</p>
+        <Fragment set:html={createLossCard(mockEvents.lossNormal, false)} />
+
+        <p class="text-xs uppercase tracking-wider mt-6" style="color: var(--text-muted);">3-Game Losing Streak (minimum to show)</p>
+        <Fragment set:html={createLossCard(mockEvents.lossStreak3, false)} />
+
+        <p class="text-xs uppercase tracking-wider mt-6" style="color: var(--text-muted);">5-Game Losing Streak</p>
+        <Fragment set:html={createLossCard(mockEvents.lossStreak5, false)} />
+
+        <p class="text-xs uppercase tracking-wider mt-6" style="color: var(--text-muted);">10-Game Losing Streak</p>
+        <Fragment set:html={createLossCard(mockEvents.lossStreak10, false)} />
+      </div>
+    </section>
+
+    <!-- Team Color Samples -->
+    <section class="mb-10">
+      <Fragment set:html={createDayHeader('TEAM COLOR GLOWS')} />
+      <p class="text-sm mb-4" style="color: var(--text-muted);">Loss card glows match team primary color</p>
+      <div class="space-y-4">
+        <Fragment set:html={createLossCard({ ...mockEvents.lossStreak3, teamAbbreviation: 'BOS', losingStreak: 4 }, false)} />
+        <Fragment set:html={createLossCard({ ...mockEvents.lossStreak3, teamAbbreviation: 'MTL', losingStreak: 3 }, false)} />
+        <Fragment set:html={createLossCard({ ...mockEvents.lossStreak3, teamAbbreviation: 'VGK', losingStreak: 5 }, false)} />
+        <Fragment set:html={createLossCard({ ...mockEvents.lossStreak3, teamAbbreviation: 'SEA', losingStreak: 3 }, false)} />
+      </div>
+    </section>
+  </div>
+</Layout>
+
+<script>
+  import { createGoalCard } from '../lib/cards.js';
+
+  const addBtn = document.getElementById('add-card-btn');
+  const container = document.getElementById('animation-test');
+  let counter = 0;
+
+  const testEvents = [
+    {
+      teamAbbreviation: 'TOR',
+      teamName: 'Maple Leafs',
+      opponentAbbreviation: 'MTL',
+      opponentName: 'Canadiens',
+      period: '2nd',
+      timeInPeriod: '12:00',
+      scorerName: 'Nick Suzuki',
+      shotType: 'wrist',
+      strength: 'ev',
+    },
+    {
+      teamAbbreviation: 'NYR',
+      teamName: 'Rangers',
+      opponentAbbreviation: 'NJD',
+      opponentName: 'Devils',
+      period: '3rd',
+      timeInPeriod: '05:30',
+      scorerName: 'Jack Hughes',
+      shotType: 'snap',
+      strength: 'pp',
+    },
+    {
+      teamAbbreviation: 'LAK',
+      teamName: 'Kings',
+      opponentAbbreviation: 'SJS',
+      opponentName: 'Sharks',
+      period: '1st',
+      timeInPeriod: '18:45',
+      scorerName: 'Macklin Celebrini',
+      shotType: 'slap',
+      strength: 'sh',
+    },
+  ];
+
+  addBtn?.addEventListener('click', () => {
+    const event = { ...testEvents[counter % testEvents.length], id: `test-new-${Date.now()}` };
+    const html = createGoalCard(event, true); // isNew = true for animation
+    container?.insertAdjacentHTML('afterbegin', html);
+    counter++;
+  });
+</script>

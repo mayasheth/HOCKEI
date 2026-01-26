@@ -18,14 +18,16 @@ function formatShotType(shotType) {
 /**
  * Create a Goal Against card
  * @param {Object} event
+ * @param {boolean} isNew - Whether this is a new card (for animation)
  * @returns {string} HTML string
  */
-export function createGoalCard(event) {
+export function createGoalCard(event, isNew = false) {
   const rivalColors = getTeamColors(event.teamAbbreviation);
   const shotTypeDisplay = formatShotType(event.shotType);
+  const animClass = isNew ? ' card-enter' : '';
 
   return `
-    <div class="card goal-card overflow-hidden" style="border-left: 3px solid ${rivalColors.primary};">
+    <div class="card goal-card${animClass} overflow-hidden" data-event-id="${event.id}" style="border-left: 3px solid ${rivalColors.primary};">
       <!-- Header bar -->
       <div class="flex items-center justify-between px-4 py-2" style="background: ${rivalColors.primary}10; border-bottom: 1px solid ${rivalColors.primary}20;">
         <span class="text-sm tracking-wider uppercase">
@@ -82,13 +84,16 @@ export function createGoalCard(event) {
 /**
  * Create a Loss/Defeated card
  * @param {Object} event
+ * @param {boolean} isNew - Whether this is a new card (for animation)
  * @returns {string} HTML string
  */
-export function createLossCard(event) {
+export function createLossCard(event, isNew = false) {
   const rivalColors = getTeamColors(event.teamAbbreviation);
+  const animClass = isNew ? ' card-enter' : '';
+  const showStreak = event.losingStreak > 2;
 
   return `
-    <div class="card loss-card overflow-hidden" style="border-left: 3px solid ${rivalColors.primary};">
+    <div class="card loss-card${animClass} overflow-hidden" data-event-id="${event.id}" style="--glow-color: ${rivalColors.primary}; border-left: 3px solid ${rivalColors.primary};">
       <!-- Header -->
       <div class="flex items-center justify-between px-4 py-2" style="background: ${rivalColors.primary}10; border-bottom: 1px solid ${rivalColors.primary}20;">
         <span class="text-sm tracking-wider uppercase">
@@ -120,6 +125,14 @@ export function createLossCard(event) {
           />
         </div>
       </div>
+      ${showStreak ? `
+      <!-- Losing Streak -->
+      <div class="px-4 py-2 text-center" style="background: ${rivalColors.primary}10; border-top: 1px solid ${rivalColors.primary}20;">
+        <span class="text-xs font-semibold uppercase tracking-wider" style="color: ${rivalColors.primary};">
+          ${event.losingStreak} straight losses for ${event.teamAbbreviation}
+        </span>
+      </div>
+      ` : ''}
     </div>
   `;
 }
