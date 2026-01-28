@@ -3,7 +3,7 @@ import '../styles/global.css'
 
 interface Props {
   title: string;
-  activePage?: 'feed' | 'rivals';
+  activePage?: 'feed' | 'rivals' | 'stats';
 }
 
 const { title, activePage = 'feed' } = Astro.props;
@@ -40,6 +40,13 @@ const { title, activePage = 'feed' } = Astro.props;
               style={`color: ${activePage === 'feed' ? 'var(--text-primary)' : 'var(--text-secondary)'};`}
             >
               Feed
+            </a>
+            <a
+              href="/stats"
+              class={`nav-link text-sm font-medium ${activePage === 'stats' ? 'active' : ''}`}
+              style={`color: ${activePage === 'stats' ? 'var(--text-primary)' : 'var(--text-secondary)'};`}
+            >
+              Stats
             </a>
             <a
               href="/rivals"

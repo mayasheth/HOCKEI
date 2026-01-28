@@ -11,14 +11,19 @@ src/
 ├── pages/
 │   ├── index.astro          # Main feed with auto-refresh polling
 │   ├── rivals.astro         # Team selection grid
+│   ├── test.astro           # Component test page (cards, animations, curses)
 │   └── api/nhl/[...path].js # CORS proxy → api-web.nhle.com/v1/*
 ├── layouts/
 │   └── Layout.astro         # Nav + page wrapper
 ├── lib/
-│   ├── nhl.js               # NHL API: fetchTeams, fetchScores, fetchPlayByPlay, fetchNegativeEvents, hasLiveGames
+│   ├── nhl.js               # NHL API: fetchTeams, fetchScores, fetchPlayByPlay, fetchNegativeEvents, hasLiveGames, fetchLosingStreak
 │   ├── cards.js             # HTML generators: createGoalCard(event, isNew), createLossCard(event, isNew)
 │   ├── store.js             # localStorage: getSelectedRivals, toggleRival, clearAllRivals
-│   └── teamColors.js        # Team colors map + getTeamColors(abbrev), accentRed
+│   ├── teamColors.js        # Team colors map + getTeamColors(abbrev), accentRed
+│   └── curses/              # "Cursed Numbers" - embarrassing stats framework
+│       ├── index.js         # computeCursesForTeam(abbrev), computeCursesForTeams(abbrevs)
+│       ├── templates.js     # Curse template definitions (day droughts, streaks, etc.)
+│       └── compute.js       # Helper functions for stat calculations
 └── styles/
     └── global.css           # CSS variables, card styles, animations (card-enter for new cards)
 public/
@@ -35,6 +40,7 @@ public/
 - **Auto-refresh**: Polls every 20s during live games, 5min otherwise. Pauses when tab hidden.
 - **Incremental updates**: Feed tracks event IDs; new cards animate in (scale pop), existing cards stay put.
 - **Cards**: Pass `isNew=true` to card functions to trigger `card-enter` animation class.
+- **Curses**: Templates in `curses/templates.js` define embarrassing stats. Each has `compute`, `isCursed` (threshold), `format`, and `severity` functions.
 
 ## Commands
 ```bash

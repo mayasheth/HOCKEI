@@ -92,6 +92,35 @@ const mockEvents = {
 };
 ---
 
+<style is:global>
+  /* Toggle arrow hover and rotation */
+  .toggle-arrow {
+    transition: transform 0.25s ease;
+  }
+  .evidence-toggle:hover .toggle-arrow {
+    transform: scale(1.05);
+  }
+  .evidence-toggle .toggle-arrow.open {
+    transform: rotate(180deg);
+  }
+  .evidence-toggle:hover .toggle-arrow.open {
+    transform: rotate(180deg) scale(1.05);
+  }
+
+  /* Evidence panel slide animation */
+  .evidence-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease;
+  }
+  .evidence-panel.open {
+    grid-template-rows: 1fr;
+  }
+  .evidence-panel > div {
+    overflow: hidden;
+  }
+</style>
+
 <Layout title="HOCKEI - Test Page" activePage="feed">
   <div class="max-w-2xl mx-auto px-4 py-6">
     <div class="mb-8">
@@ -159,6 +188,40 @@ const mockEvents = {
         <Fragment set:html={createLossCard({ ...mockEvents.lossStreak3, teamAbbreviation: 'SEA', losingStreak: 3 }, false)} />
       </div>
     </section>
+
+    <!-- Cursed Numbers Test -->
+    <section class="mb-10">
+      <Fragment set:html={createDayHeader('CURSED NUMBERS')} />
+      <p class="text-sm mb-4" style="color: var(--text-muted);">Compute embarrassing stats from real team data</p>
+
+      <div class="flex gap-2 mb-4">
+        <select id="curse-team-select" class="px-3 py-2 rounded-lg text-sm" style="background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-subtle);">
+          <option value="">Select a team...</option>
+          <option value="TOR">Toronto Maple Leafs</option>
+          <option value="BOS">Boston Bruins</option>
+          <option value="MTL">Montreal Canadiens</option>
+          <option value="NYR">New York Rangers</option>
+          <option value="CHI">Chicago Blackhawks</option>
+          <option value="SJS">San Jose Sharks</option>
+          <option value="DET">Detroit Red Wings</option>
+          <option value="BUF">Buffalo Sabres</option>
+        </select>
+        <button
+          id="compute-curses-btn"
+          class="btn px-4 py-2 text-sm font-medium rounded-lg"
+          style="background-color: var(--accent-red); color: white;"
+        >
+          Compute Curses
+        </button>
+      </div>
+
+      <div id="curses-loading" class="hidden py-8 text-center">
+        <div class="spinner w-6 h-6 border-2 border-white/20 border-t-white/80 rounded-full mx-auto mb-2"></div>
+        <p class="text-sm" style="color: var(--text-muted);">Computing curses...</p>
+      </div>
+
+      <div id="curses-results" class="space-y-2"></div>
+    </section>
   </div>
 </Layout>
 
@@ -210,5 +273,101 @@ const mockEvents = {
     const html = createGoalCard(event, true); // isNew = true for animation
     container?.insertAdjacentHTML('afterbegin', html);
     counter++;
+  });
+
+  // Cursed Numbers test
+  import { computeCursesForTeam } from '../lib/curses/index.js';
+
+  const curseSelect = document.getElementById('curse-team-select') as HTMLSelectElement;
+  const curseBtn = document.getElementById('compute-curses-btn');
+  const curseLoading = document.getElementById('curses-loading');
+  const curseResults = document.getElementById('curses-results');
+
+  curseBtn?.addEventListener('click', async () => {
+    const team = curseSelect?.value;
+    if (!team) {
+      alert('Please select a team');
+      return;
+    }
+
+    curseLoading?.classList.remove('hidden');
+    curseResults!.innerHTML = '';
+
+    try {
+      const curses = await computeCursesForTeam(team);
+
+      curseLoading?.classList.add('hidden');
+
+      if (curses.length === 0) {
+        curseResults!.innerHTML = `
+          <div class="p-4 rounded-lg text-center" style="background: var(--bg-card); border: 1px solid var(--border-subtle);">
+            <p style="color: var(--text-muted);">No curses found for ${team} - they're doing okay (for now)</p>
+          </div>
+        `;
+        return;
+      }
+
+      let html = `<p class="text-xs uppercase tracking-wider mb-2" style="color: var(--text-muted);">${curses.length} curse(s) found for ${team}</p>`;
+
+      for (const curse of curses) {
+        const severityBars = '█'.repeat(curse.severity) + '░'.repeat(5 - curse.severity);
+        const hasEvidence = curse.evidence && curse.evidence.length > 0;
+        const curseId = `curse-${curse.id}-${Date.now()}`;
+
+        html += `
+          <div class="rounded-lg overflow-hidden" style="background: var(--bg-card); border: 1px solid var(--border-subtle);">
+            <div class="p-3 flex items-center justify-between cursor-pointer hover:brightness-110 transition-all ${hasEvidence ? 'evidence-toggle' : ''}" data-target="${curseId}">
+              <span style="color: var(--text-primary);">${curse.formatted}</span>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-mono" style="color: var(--accent-red);" title="Severity: ${curse.severity}/5">${severityBars}</span>
+                ${hasEvidence ? `<svg class="toggle-arrow" width="12" height="12" viewBox="0 0 12 12" fill="currentColor" style="color: var(--text-muted); transition: transform 0.25s ease; transform-origin: center;">
+                  <path d="M2 4 L6 8 L10 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>` : ''}
+              </div>
+            </div>
+            ${hasEvidence ? `
+            <div id="${curseId}" class="evidence-panel border-t" style="border-color: var(--border-subtle);">
+              <div>
+                <div class="p-2 space-y-1">
+                  <p class="text-xs uppercase tracking-wider mb-1" style="color: var(--text-muted);">Evidence (${curse.evidence.length} games)</p>
+                  ${curse.evidence.slice(0, 8).map((g: any) => `
+                    <div class="flex justify-between text-xs py-1 px-2 rounded" style="background: rgba(0,0,0,0.3);">
+                      <span style="color: var(--text-secondary);">${g.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${g.dayOfWeek}</span>
+                      <span style="color: ${g.isLoss ? 'var(--accent-red)' : 'var(--text-muted)'};">
+                        ${g.isHome ? 'vs' : '@'} ${g.isHome ? g.awayTeam?.abbrev : g.homeTeam?.abbrev}
+                        ${g.teamScore}-${g.oppScore} ${g.isLoss ? 'L' : g.isWin ? 'W' : 'OTL'}
+                      </span>
+                    </div>
+                  `).join('')}
+                  ${curse.evidence.length > 8 ? `<p class="text-xs text-center" style="color: var(--text-muted);">+ ${curse.evidence.length - 8} more</p>` : ''}
+                </div>
+              </div>
+            </div>
+            ` : ''}
+          </div>
+        `;
+      }
+
+      curseResults!.innerHTML = html;
+
+      // Add click handlers for evidence toggles
+      document.querySelectorAll('.evidence-toggle').forEach(el => {
+        el.addEventListener('click', () => {
+          const targetId = el.getAttribute('data-target');
+          const panel = document.getElementById(targetId!);
+          const arrow = el.querySelector('.toggle-arrow');
+
+          panel?.classList.toggle('open');
+          arrow?.classList.toggle('open');
+        });
+      });
+    } catch (e) {
+      curseLoading?.classList.add('hidden');
+      curseResults!.innerHTML = `
+        <div class="p-4 rounded-lg text-center" style="background: var(--bg-card); border: 1px solid rgba(229, 57, 53, 0.3);">
+          <p style="color: var(--accent-red);">Error computing curses: ${e}</p>
+        </div>
+      `;
+    }
   });
 </script>

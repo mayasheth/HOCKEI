@@ -1,0 +1,192 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<style is:global>
+  /* Toggle arrow hover and rotation */
+  .toggle-arrow,
+  .toggle-arrow-more {
+    transition: transform 0.25s ease;
+  }
+  .evidence-toggle:hover .toggle-arrow,
+  .see-more-toggle:hover .toggle-arrow-more {
+    transform: scale(1.05);
+  }
+  .toggle-arrow.open,
+  .toggle-arrow-more.open {
+    transform: rotate(180deg);
+  }
+  .evidence-toggle:hover .toggle-arrow.open,
+  .see-more-toggle:hover .toggle-arrow-more.open {
+    transform: rotate(180deg) scale(1.05);
+  }
+
+  /* Evidence panel slide animation */
+  .evidence-panel,
+  .see-more-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease;
+  }
+  .evidence-panel.open,
+  .see-more-panel.open {
+    grid-template-rows: 1fr;
+  }
+  .evidence-panel > div,
+  .see-more-panel > div {
+    overflow: hidden;
+  }
+</style>
+
+<Layout title="HOCKEI - Rival Stats" activePage="stats">
+  <div class="max-w-2xl mx-auto px-4 py-6">
+    <!-- Header -->
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold" style="color: var(--text-primary);">Unbiased Statistics</h1>
+      <p class="text-sm mt-1" style="color: var(--text-secondary);">
+        Numbers exposing the true nature of of your rivals 
+      </p>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading" class="flex flex-col items-center justify-center py-20">
+      <div class="spinner w-8 h-8 border-2 border-white/20 border-t-white/80 rounded-full mb-4"></div>
+      <p style="color: var(--text-secondary);">Computing stats...</p>
+    </div>
+
+    <!-- No Rivals Selected -->
+    <div id="no-rivals" class="hidden py-20 text-center">
+      <p class="text-lg mb-4" style="color: var(--text-muted);">No rivals selected</p>
+      <a href="/rivals" class="btn px-6 py-2 rounded-lg inline-block" style="background-color: var(--accent-red); color: white;">
+        Select Rivals
+      </a>
+    </div>
+
+    <!-- Playing Today Section -->
+    <div id="playing-today" class="hidden mb-8">
+      <h2 class="text-sm uppercase tracking-wider mb-4 flex items-center gap-2" style="color: var(--text-muted);">
+        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+        Playing today
+      </h2>
+      <div id="playing-today-list" class="space-y-4"></div>
+    </div>
+
+    <!-- Not Playing Today Section -->
+    <div id="not-playing" class="hidden">
+      <h2 class="text-sm uppercase tracking-wider mb-4" style="color: var(--text-muted);">
+        All the rest
+      </h2>
+      <div id="not-playing-list" class="space-y-4"></div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import { getSelectedRivals } from '../lib/store.js';
+  import { fetchTeams } from '../lib/nhl.js';
+  import { computeCursesWithContext } from '../lib/curses/index.js';
+  import { createTeamStatsCard } from '../lib/curses/statsCard.js';
+
+  const loading = document.getElementById('loading');
+  const noRivals = document.getElementById('no-rivals');
+  const playingTodaySection = document.getElementById('playing-today');
+  const playingTodayList = document.getElementById('playing-today-list');
+  const notPlayingSection = document.getElementById('not-playing');
+  const notPlayingList = document.getElementById('not-playing-list');
+
+  async function loadStats() {
+    const rivals = getSelectedRivals();
+
+    if (rivals.size === 0) {
+      loading?.classList.add('hidden');
+      noRivals?.classList.remove('hidden');
+      return;
+    }
+
+    try {
+      // Get team names
+      const allTeams = await fetchTeams();
+      const teamMap = new Map(allTeams.map(t => [t.abbreviation, t.name]));
+
+      // Compute curses for each rival
+      const playingToday = [];
+      const notPlaying = [];
+
+      const promises = Array.from(rivals).map(async (abbrev) => {
+        const cursesData = await computeCursesWithContext(abbrev);
+        const teamName = teamMap.get(abbrev) || abbrev;
+        return { abbrev, teamName, cursesData };
+      });
+
+      const results = await Promise.all(promises);
+
+      for (const { abbrev, teamName, cursesData } of results) {
+        if (cursesData.gameContext) {
+          playingToday.push({ abbrev, teamName, cursesData });
+        } else {
+          notPlaying.push({ abbrev, teamName, cursesData });
+        }
+      }
+
+      loading?.classList.add('hidden');
+
+      // Render playing today
+      if (playingToday.length > 0) {
+        playingTodaySection?.classList.remove('hidden');
+        playingTodayList!.innerHTML = playingToday
+          .map(({ abbrev, teamName, cursesData }) => createTeamStatsCard(abbrev, teamName, cursesData))
+          .join('');
+      }
+
+      // Render not playing
+      if (notPlaying.length > 0) {
+        notPlayingSection?.classList.remove('hidden');
+        notPlayingList!.innerHTML = notPlaying
+          .map(({ abbrev, teamName, cursesData }) => createTeamStatsCard(abbrev, teamName, cursesData))
+          .join('');
+      }
+
+      // Setup toggle handlers
+      setupToggleHandlers();
+
+    } catch (e) {
+      console.error('Failed to load stats:', e);
+      loading?.classList.add('hidden');
+      noRivals!.innerHTML = `
+        <p class="text-lg mb-4" style="color: var(--accent-red);">Failed to load stats</p>
+        <button onclick="location.reload()" class="btn px-6 py-2 rounded-lg" style="background-color: var(--accent-red); color: white;">
+          Retry
+        </button>
+      `;
+      noRivals?.classList.remove('hidden');
+    }
+  }
+
+  function setupToggleHandlers() {
+    // Evidence toggles
+    document.querySelectorAll('.evidence-toggle').forEach(el => {
+      el.addEventListener('click', () => {
+        const targetId = el.getAttribute('data-target');
+        const panel = document.getElementById(targetId!);
+        const arrow = el.querySelector('.toggle-arrow');
+
+        panel?.classList.toggle('open');
+        arrow?.classList.toggle('open');
+      });
+    });
+
+    // See more toggles
+    document.querySelectorAll('.see-more-toggle').forEach(el => {
+      el.addEventListener('click', () => {
+        const targetId = el.getAttribute('data-target');
+        const panel = document.getElementById(targetId!);
+        const arrow = el.querySelector('.toggle-arrow-more');
+
+        panel?.classList.toggle('open');
+        arrow?.classList.toggle('open');
+      });
+    });
+  }
+
+  loadStats();
+</script>
