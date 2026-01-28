@@ -11,6 +11,7 @@
   "dependencies": {
     "@astrojs/vercel": "^9.0.4",
     "@tailwindcss/vite": "^4.1.18",
+    "@vercel/analytics": "^1.6.1",
     "astro": "^5.16.12",
     "tailwindcss": "^4.1.18"
   }
