@@ -28,8 +28,8 @@ function createCurseItem(curse, curseId) {
       ${hasEvidence ? `
       <div id="${curseId}" class="evidence-panel border-t" style="border-color: var(--border-subtle);">
         <div>
-          <div class="p-2 space-y-1">
-            ${curse.evidence.slice(0, 5).map((g) => `
+          <div class="p-2 space-y-1" style="max-height: 200px; overflow-y: auto;">
+            ${curse.evidence.map((g) => `
               <div class="flex justify-between text-xs py-1 px-2 rounded" style="background: rgba(0,0,0,0.3);">
                 <span style="color: var(--text-secondary);">${new Date(g.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                 <span style="color: ${g.isLoss ? 'var(--accent-red)' : 'var(--text-muted)'};">
@@ -38,7 +38,6 @@ function createCurseItem(curse, curseId) {
                 </span>
               </div>
             `).join('')}
-            ${curse.evidence.length > 5 ? `<p class="text-xs text-center" style="color: var(--text-muted);">+ ${curse.evidence.length - 5} more</p>` : ''}
           </div>
         </div>
       </div>

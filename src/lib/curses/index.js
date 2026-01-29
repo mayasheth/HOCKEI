@@ -30,7 +30,8 @@ export async function getTodayGameContext(teamAbbrev) {
   try {
     const rawGames = await fetchTeamSchedule(teamAbbrev);
     const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
+    // Use local date format (YYYY-MM-DD) to match NHL API which uses Eastern time
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' });
 
     // Find today's game
@@ -40,7 +41,7 @@ export async function getTodayGameContext(teamAbbrev) {
     // Check if it's a back-to-back (played yesterday)
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
     const yesterdayGame = rawGames.find(g =>
       g.gameDate === yesterdayStr &&
       (g.gameState === 'OFF' || g.gameState === 'FINAL')
