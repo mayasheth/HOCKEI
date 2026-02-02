@@ -127,7 +127,7 @@ export function createTeamStatsCard(teamAbbrev, teamName, cursesData) {
           <svg class="toggle-arrow-more" width="10" height="10" viewBox="0 0 12 12" fill="currentColor">
             <path d="M2 4 L6 8 L10 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <span>${isPlayingToday ? `${seeMoreCount} more ${seeMoreCount > 1 ? 's' : ''}` : `See ${seeMoreCount} stat${seeMoreCount > 1 ? 's' : ''}`}</span>
+          <span>${isPlayingToday ? `${seeMoreCount} more stat${seeMoreCount > 1 ? 's' : ''}` : `See ${seeMoreCount} stat${seeMoreCount > 1 ? 's' : ''}`}</span>
         </button>
         <div id="${cardId}-more" class="see-more-panel">
           <div>
