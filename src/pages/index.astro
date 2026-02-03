@@ -43,6 +43,29 @@ import Layout from '../layouts/Layout.astro';
     <!-- Events Feed -->
     <div id="feed" class="hidden space-y-4"></div>
 
+    <!-- Load More -->
+    <div id="load-more-container" class="hidden py-6 text-center">
+      <button
+        id="load-more-btn"
+        class="btn px-6 py-2 text-sm font-medium rounded-lg"
+        style="background-color: var(--bg-card); color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.1);"
+      >
+        Load earlier games
+      </button>
+    </div>
+
+    <!-- Loading More Indicator -->
+    <div id="loading-more" class="hidden py-6 text-center">
+      <div class="inline-flex items-center gap-2">
+        <div class="spinner w-4 h-4 border-2 border-white/20 border-t-white/80 rounded-full"></div>
+        <span class="text-sm" style="color: var(--text-secondary);">Loading more...</span>
+      </div>
+    </div>
+
+    <!-- End of Feed -->
+    <div id="end-of-feed" class="hidden py-6 text-center">
+      <span class="text-sm" style="color: var(--text-muted);">No more games to load</span>
+    </div>
 
   </div>
 </Layout>
@@ -55,17 +78,26 @@ import Layout from '../layouts/Layout.astro';
   // Polling intervals
   const LIVE_INTERVAL = 20000;    // 20 seconds when live games
   const IDLE_INTERVAL = 300000;   // 5 minutes otherwise
+  const DAYS_PER_LOAD = 3;        // Days to load per batch
+  const MAX_DAYS = 30;            // Maximum days to load (roughly a month)
 
   const loading = document.getElementById('loading');
   const empty = document.getElementById('empty');
   const noEvents = document.getElementById('no-events');
   const feed = document.getElementById('feed');
   const refreshBtn = document.getElementById('refresh-btn');
+  const loadMoreContainer = document.getElementById('load-more-container');
+  const loadMoreBtn = document.getElementById('load-more-btn');
+  const loadingMore = document.getElementById('loading-more');
+  const endOfFeed = document.getElementById('end-of-feed');
 
   let pollIntervalId = null;
   let isLive = false;
   let currentEventIds = new Set();
   let isInitialLoad = true;
+  let daysLoaded = 0;
+  let allEvents = [];
+  let scheduleCache = new Map(); // Shared cache for streak calculations
 
   function formatDate(dateString) {
     const date = new Date(dateString);
@@ -151,6 +183,8 @@ import Layout from '../layouts/Layout.astro';
       empty.classList.add('hidden');
       noEvents.classList.add('hidden');
       feed.classList.add('hidden');
+      loadMoreContainer.classList.add('hidden');
+      endOfFeed.classList.add('hidden');
     }
 
     if (rivals.size === 0) {
@@ -158,13 +192,22 @@ import Layout from '../layouts/Layout.astro';
       empty.classList.remove('hidden');
       noEvents.classList.add('hidden');
       feed.classList.add('hidden');
+      loadMoreContainer.classList.add('hidden');
+      endOfFeed.classList.add('hidden');
       currentEventIds = new Set();
+      allEvents = [];
+      daysLoaded = 0;
+      scheduleCache = new Map();
       isInitialLoad = true;
       return;
     }
 
     try {
-      const events = await fetchNegativeEvents(rivals, 3);
+      // Reset cache on fresh load to get updated schedule data
+      scheduleCache = new Map();
+      const events = await fetchNegativeEvents(rivals, DAYS_PER_LOAD, 0, scheduleCache);
+      daysLoaded = DAYS_PER_LOAD;
+      allEvents = events;
 
       loading.classList.add('hidden');
       empty.classList.add('hidden');
@@ -172,6 +215,8 @@ import Layout from '../layouts/Layout.astro';
       if (events.length === 0) {
         noEvents.classList.remove('hidden');
         feed.classList.add('hidden');
+        loadMoreContainer.classList.add('hidden');
+        endOfFeed.classList.add('hidden');
         currentEventIds = new Set();
         isInitialLoad = true;
         return;
@@ -180,6 +225,15 @@ import Layout from '../layouts/Layout.astro';
       noEvents.classList.add('hidden');
       feed.classList.remove('hidden');
       renderFeed(events);
+
+      // Show "Load More" button if we haven't hit the max
+      if (daysLoaded < MAX_DAYS) {
+        loadMoreContainer.classList.remove('hidden');
+        endOfFeed.classList.add('hidden');
+      } else {
+        loadMoreContainer.classList.add('hidden');
+        endOfFeed.classList.remove('hidden');
+      }
     } catch (error) {
       console.error('Failed to load feed:', error);
       // On error during refresh, keep existing content visible
@@ -187,6 +241,46 @@ import Layout from '../layouts/Layout.astro';
         loading.classList.add('hidden');
         noEvents.classList.remove('hidden');
       }
+    }
+  }
+
+  async function loadMore() {
+    const rivals = getSelectedRivals();
+    if (rivals.size === 0 || daysLoaded >= MAX_DAYS) return;
+
+    loadMoreContainer.classList.add('hidden');
+    loadingMore.classList.remove('hidden');
+
+    try {
+      const newEvents = await fetchNegativeEvents(rivals, DAYS_PER_LOAD, daysLoaded, scheduleCache);
+      daysLoaded += DAYS_PER_LOAD;
+
+      loadingMore.classList.add('hidden');
+
+      if (newEvents.length === 0) {
+        // No more events found
+        endOfFeed.classList.remove('hidden');
+        return;
+      }
+
+      // Append new events (filter out any duplicates just in case)
+      const existingIds = new Set(allEvents.map(e => e.id));
+      const uniqueNewEvents = newEvents.filter(e => !existingIds.has(e.id));
+      allEvents = [...allEvents, ...uniqueNewEvents];
+
+      // Re-render with all events (new ones will animate)
+      renderFeed(allEvents);
+
+      // Show appropriate button
+      if (daysLoaded < MAX_DAYS) {
+        loadMoreContainer.classList.remove('hidden');
+      } else {
+        endOfFeed.classList.remove('hidden');
+      }
+    } catch (error) {
+      console.error('Failed to load more:', error);
+      loadingMore.classList.add('hidden');
+      loadMoreContainer.classList.remove('hidden');
     }
   }
 
@@ -212,4 +306,7 @@ import Layout from '../layouts/Layout.astro';
 
   // Refresh button
   refreshBtn?.addEventListener('click', loadFeed);
+
+  // Load more button
+  loadMoreBtn?.addEventListener('click', loadMore);
 </script>

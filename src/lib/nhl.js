@@ -67,6 +67,51 @@ export async function fetchLosingStreak(teamAbbrev) {
 }
 
 /**
+ * Fetch completed games for a team (for streak calculation)
+ * @param {string} teamAbbrev - Team abbreviation
+ * @returns {Promise<Array>} Completed games sorted by date DESC
+ */
+async function fetchCompletedGames(teamAbbrev) {
+  try {
+    const res = await fetch(`${API_BASE}/club-schedule-season/${teamAbbrev}/now`);
+    if (!res.ok) return [];
+    const data = await res.json();
+
+    return (data.games || [])
+      .filter(g => g.gameState === 'OFF' || g.gameState === 'FINAL')
+      .sort((a, b) => new Date(b.gameDate) - new Date(a.gameDate));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Calculate losing streak at a specific game date
+ * @param {Array} completedGames - Completed games sorted by date DESC
+ * @param {string} teamAbbrev - Team abbreviation
+ * @param {string} targetDate - The game date (YYYY-MM-DD) to calculate streak at
+ * @returns {number} Losing streak at that point in time
+ */
+function calculateStreakAtDate(completedGames, teamAbbrev, targetDate) {
+  // Filter to games on or before targetDate
+  const gamesUpToDate = completedGames.filter(g => g.gameDate <= targetDate);
+
+  let streak = 0;
+  for (const game of gamesUpToDate) {
+    const isHome = game.homeTeam.abbrev === teamAbbrev;
+    const teamScore = isHome ? game.homeTeam.score : game.awayTeam.score;
+    const oppScore = isHome ? game.awayTeam.score : game.homeTeam.score;
+
+    if (teamScore < oppScore) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+/**
  * Fetch scores for a specific date
  * @param {Date|null} date - Date to fetch, or null for current
  * @returns {Promise<Array>}
@@ -145,15 +190,17 @@ function getPeriodDisplay(period, periodDescriptor) {
 /**
  * Fetch negative events (goals against + losses) for rival teams
  * @param {Set<string>} rivalAbbreviations - Set of team abbreviations
- * @param {number} days - Number of days to look back (default 3 for 72 hours)
+ * @param {number} days - Number of days to fetch (default 3)
+ * @param {number} startDayOffset - How many days back to start from (default 0 = today)
+ * @param {Map} scheduleCache - Optional cache for team schedules (for efficiency across multiple calls)
  * @returns {Promise<Array>}
  */
-export async function fetchNegativeEvents(rivalAbbreviations, days = 3) {
+export async function fetchNegativeEvents(rivalAbbreviations, days = 3, startDayOffset = 0, scheduleCache = null) {
   const events = [];
   const today = new Date();
-  const streakCache = new Map(); // Cache streak lookups per team
+  const cache = scheduleCache || new Map(); // Cache completed games per team for streak calculation
 
-  for (let dayOffset = 0; dayOffset < days; dayOffset++) {
+  for (let dayOffset = startDayOffset; dayOffset < startDayOffset + days; dayOffset++) {
     const currentDate = new Date(today);
     currentDate.setDate(today.getDate() - dayOffset);
 
@@ -199,20 +246,22 @@ export async function fetchNegativeEvents(rivalAbbreviations, days = 3) {
           const awayScore = game.awayTeam.score ?? 0;
 
           if (homeIsRival && homeScore < awayScore) {
-            // Fetch losing streak (cached)
+            // Fetch completed games schedule (cached) and calculate streak at game date
             const abbrev = game.homeTeam.abbrev;
-            if (!streakCache.has(abbrev)) {
-              streakCache.set(abbrev, fetchLosingStreak(abbrev));
+            if (!cache.has(abbrev)) {
+              cache.set(abbrev, fetchCompletedGames(abbrev));
             }
-            const streak = await streakCache.get(abbrev);
+            const completedGames = await cache.get(abbrev);
+            const streak = calculateStreakAtDate(completedGames, abbrev, game.gameDate);
             events.push(buildLossEvent(game, game.homeTeam, homeScore, game.awayTeam, awayScore, true, streak));
           } else if (awayIsRival && awayScore < homeScore) {
-            // Fetch losing streak (cached)
+            // Fetch completed games schedule (cached) and calculate streak at game date
             const abbrev = game.awayTeam.abbrev;
-            if (!streakCache.has(abbrev)) {
-              streakCache.set(abbrev, fetchLosingStreak(abbrev));
+            if (!cache.has(abbrev)) {
+              cache.set(abbrev, fetchCompletedGames(abbrev));
             }
-            const streak = await streakCache.get(abbrev);
+            const completedGames = await cache.get(abbrev);
+            const streak = calculateStreakAtDate(completedGames, abbrev, game.gameDate);
             events.push(buildLossEvent(game, game.awayTeam, awayScore, game.homeTeam, homeScore, false, streak));
           }
         }
