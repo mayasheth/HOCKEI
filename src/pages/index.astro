@@ -80,13 +80,13 @@ import Layout from '../layouts/Layout.astro';
     }
 
     #event-layer .event-card.aging {
-      opacity: 0.4;
-      transform: scale(0.78);
+      opacity: 0.6;
+      transform: scale(0.85);
     }
 
     #event-layer .event-card.ancient {
-      opacity: 0.18;
-      transform: scale(0.6);
+      opacity: 0.35;
+      transform: scale(0.7);
     }
 
     /* Depth shift hover effect */
@@ -97,15 +97,15 @@ import Layout from '../layouts/Layout.astro';
     }
 
     #event-layer:has(.event-card:hover) .event-card.aging:not(:hover) {
-      transform: scale(0.7) translateZ(-80px);
+      transform: scale(0.75) translateZ(-80px);
       opacity: 0.15;
       filter: blur(2px);
     }
 
     #event-layer:has(.event-card:hover) .event-card.ancient:not(:hover) {
-      transform: scale(0.55) translateZ(-120px);
-      opacity: 0.08;
-      filter: blur(3px);
+      transform: scale(0.6) translateZ(-120px);
+      opacity: 0.15;
+      filter: blur(2px);
     }
 
     #event-layer .event-card:hover {
@@ -203,8 +203,8 @@ import Layout from '../layouts/Layout.astro';
 
     const centerX = (minX + maxX) / 2;
     const centerY = (minY + maxY) / 2;
-    const spreadX = (maxX - minX) * 0.4;
-    const spreadY = (maxY - minY) * 0.4;
+    const spreadX = (maxX - minX) * 0.45;
+    const spreadY = (maxY - minY) * 0.45;
 
     let bestX = centerX, bestY = centerY, bestDist = -1;
 
@@ -247,7 +247,7 @@ import Layout from '../layouts/Layout.astro';
     const dx = origX - centerX;
     const dy = origY - centerY;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    const pushDist = 80 + Math.random() * 60;
+    const pushDist = 40 + Math.random() * 30;
     const nx = dist > 0 ? dx / dist : (Math.random() - 0.5);
     const ny = dist > 0 ? dy / dist : (Math.random() - 0.5);
 
@@ -293,16 +293,16 @@ import Layout from '../layouts/Layout.astro';
         }, 50);
       }
 
-      // Age older events
+      // Age older events (keep more cards visible)
       placedEvents.forEach((pe, i) => {
         const age = placedEvents.length - i;
-        if (age >= 4) {
+        if (age >= 6) {
           pe.el.classList.add('ancient');
           pe.el.classList.remove('aging');
           const ancientPos = getAgingPosition(pe.origX, pe.origY);
           pe.el.style.left = ancientPos.x + 'px';
           pe.el.style.top = ancientPos.y + 'px';
-        } else if (age >= 2) {
+        } else if (age >= 4) {
           pe.el.classList.add('aging');
           const agingPos = getAgingPosition(pe.origX, pe.origY);
           pe.el.style.left = agingPos.x + 'px';
@@ -386,10 +386,33 @@ import Layout from '../layouts/Layout.astro';
     }
 
     try {
-      const events = await fetchNegativeEvents(rivals, DAYS_TO_LOAD, 0, new Map());
+      let events = await fetchNegativeEvents(rivals, DAYS_TO_LOAD, 0, new Map());
+      let startOffset = 0;
+
+      // If no events in initial window, find where the games are
+      // (handles off-season, Olympic breaks, etc.)
+      if (events.length === 0) {
+        const MAX_LOOKBACK = 60;
+        let searchOffset = DAYS_TO_LOAD;
+
+        while (events.length === 0 && searchOffset < MAX_LOOKBACK) {
+          // Check the next chunk for any events
+          const chunk = await fetchNegativeEvents(rivals, 7, searchOffset, new Map());
+          if (chunk.length > 0) {
+            // Found events - load DAYS_TO_LOAD days from this offset
+            startOffset = searchOffset;
+            events = await fetchNegativeEvents(rivals, DAYS_TO_LOAD, startOffset, new Map());
+            break;
+          }
+          searchOffset += 7;
+        }
+      }
+
+      // Update loadedDays to reflect where we're loading from
+      loadedDays = startOffset + DAYS_TO_LOAD;
 
       if (events.length === 0) {
-        // Keep idle state visible
+        // Truly no events found even after lookback
         return;
       }
 
