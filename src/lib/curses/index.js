@@ -111,11 +111,9 @@ export async function computeCursesForTeam(teamAbbrev, gameContext = null) {
       }
     }
 
-    // If no curses meet threshold, return the most severe one as "closest to cursed"
+    // If no curses meet threshold, return the most severe one
     if (curses.length === 0 && allResults.length > 0) {
       const mostSevere = allResults.sort((a, b) => b.severity - a.severity)[0];
-      // Mark it as a near-miss
-      mostSevere.formatted = mostSevere.formatted + ' (closest to cursed)';
       return [mostSevere];
     }
 

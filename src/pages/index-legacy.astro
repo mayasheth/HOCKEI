@@ -1,0 +1,312 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="HOCKEI - Feed" activePage="feed">
+  <div class="max-w-2xl mx-auto px-4 py-6">
+    <!-- Header -->
+    <div class="flex justify-end mb-4">
+      <button
+        id="refresh-btn"
+        class="btn px-3 py-1.5 text-sm font-medium rounded-lg"
+        style="background-color: var(--accent-red); color: white;"
+      >
+        Refresh
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading" class="flex flex-col items-center justify-center py-20">
+      <div class="spinner w-8 h-8 border-2 border-white/20 border-t-white/80 rounded-full mb-4"></div>
+      <p style="color: var(--text-secondary);">Loading your rivals' misfortune...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div id="empty" class="hidden text-center py-20">
+      <p class="text-xl mb-2" style="color: var(--text-secondary);">No rivals selected</p>
+      <p class="mb-6" style="color: var(--text-muted);">Pick some teams you love to hate</p>
+      <a
+        href="/rivals"
+        class="btn inline-block px-6 py-2 rounded-lg font-medium"
+        style="background-color: var(--accent-red); color: white;"
+      >
+        Select rivals
+      </a>
+    </div>
+
+    <!-- No Events State -->
+    <div id="no-events" class="hidden text-center py-20">
+      <p class="text-xl mb-2" style="color: var(--text-secondary);">Nothing to celebrate... yet</p>
+      <p style="color: var(--text-muted);">Your rivals haven't suffered recently</p>
+    </div>
+
+    <!-- Events Feed -->
+    <div id="feed" class="hidden space-y-4"></div>
+
+    <!-- Load More -->
+    <div id="load-more-container" class="hidden py-6 text-center">
+      <button
+        id="load-more-btn"
+        class="btn px-6 py-2 text-sm font-medium rounded-lg"
+        style="background-color: var(--bg-card); color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.1);"
+      >
+        Load earlier games
+      </button>
+    </div>
+
+    <!-- Loading More Indicator -->
+    <div id="loading-more" class="hidden py-6 text-center">
+      <div class="inline-flex items-center gap-2">
+        <div class="spinner w-4 h-4 border-2 border-white/20 border-t-white/80 rounded-full"></div>
+        <span class="text-sm" style="color: var(--text-secondary);">Loading more...</span>
+      </div>
+    </div>
+
+    <!-- End of Feed -->
+    <div id="end-of-feed" class="hidden py-6 text-center">
+      <span class="text-sm" style="color: var(--text-muted);">No more games to load</span>
+    </div>
+
+  </div>
+</Layout>
+
+<script>
+  import { fetchNegativeEvents, hasLiveGames } from '../lib/nhl.js';
+  import { getSelectedRivals } from '../lib/store.js';
+  import { createGoalCard, createLossCard, createDayHeader } from '../lib/cards.js';
+
+  // Polling intervals
+  const LIVE_INTERVAL = 20000;    // 20 seconds when live games
+  const IDLE_INTERVAL = 300000;   // 5 minutes otherwise
+  const DAYS_PER_LOAD = 3;        // Days to load per batch
+  const MAX_DAYS = 30;            // Maximum days to load (roughly a month)
+
+  const loading = document.getElementById('loading');
+  const empty = document.getElementById('empty');
+  const noEvents = document.getElementById('no-events');
+  const feed = document.getElementById('feed');
+  const refreshBtn = document.getElementById('refresh-btn');
+  const loadMoreContainer = document.getElementById('load-more-container');
+  const loadMoreBtn = document.getElementById('load-more-btn');
+  const loadingMore = document.getElementById('loading-more');
+  const endOfFeed = document.getElementById('end-of-feed');
+
+  let pollIntervalId = null;
+  let isLive = false;
+  let currentEventIds = new Set();
+  let isInitialLoad = true;
+  let daysLoaded = 0;
+  let allEvents = [];
+  let scheduleCache = new Map(); // Shared cache for streak calculations
+
+  function formatDate(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const eventDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+    const diffDays = Math.floor((today.getTime() - eventDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'TODAY';
+    if (diffDays === 1) return 'YESTERDAY';
+
+    return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }).toUpperCase();
+  }
+
+  function groupEventsByDay(events) {
+    const groups = new Map();
+    for (const event of events) {
+      const dateKey = formatDate(event.timestamp);
+      if (!groups.has(dateKey)) {
+        groups.set(dateKey, []);
+      }
+      groups.get(dateKey).push(event);
+    }
+    return groups;
+  }
+
+  /**
+   * Render feed with incremental updates
+   * - Initial load: render all without animation
+   * - Subsequent loads: keep existing cards, animate new ones
+   */
+  function renderFeed(events) {
+    const newEventIds = new Set(events.map(e => e.id));
+    const grouped = groupEventsByDay(events);
+
+    if (isInitialLoad) {
+      // First load: render everything without animation
+      let html = '';
+      for (const [dateStr, dayEvents] of grouped) {
+        html += createDayHeader(dateStr);
+        for (const event of dayEvents) {
+          html += event.type === 'loss'
+            ? createLossCard(event, false)
+            : createGoalCard(event, false);
+        }
+      }
+      feed.innerHTML = html;
+      currentEventIds = newEventIds;
+      isInitialLoad = false;
+      return;
+    }
+
+    // Find new events (not in current feed)
+    const newEvents = events.filter(e => !currentEventIds.has(e.id));
+
+    if (newEvents.length === 0) {
+      // No new events, nothing to update
+      return;
+    }
+
+    // Rebuild entire feed, marking new cards for animation
+    let html = '';
+    for (const [dateStr, dayEvents] of grouped) {
+      html += createDayHeader(dateStr);
+      for (const event of dayEvents) {
+        const isNew = !currentEventIds.has(event.id);
+        html += event.type === 'loss'
+          ? createLossCard(event, isNew)
+          : createGoalCard(event, isNew);
+      }
+    }
+    feed.innerHTML = html;
+    currentEventIds = newEventIds;
+  }
+
+  async function loadFeed() {
+    const rivals = getSelectedRivals();
+
+    // Only show loading spinner on initial load
+    if (isInitialLoad) {
+      loading.classList.remove('hidden');
+      empty.classList.add('hidden');
+      noEvents.classList.add('hidden');
+      feed.classList.add('hidden');
+      loadMoreContainer.classList.add('hidden');
+      endOfFeed.classList.add('hidden');
+    }
+
+    if (rivals.size === 0) {
+      loading.classList.add('hidden');
+      empty.classList.remove('hidden');
+      noEvents.classList.add('hidden');
+      feed.classList.add('hidden');
+      loadMoreContainer.classList.add('hidden');
+      endOfFeed.classList.add('hidden');
+      currentEventIds = new Set();
+      allEvents = [];
+      daysLoaded = 0;
+      scheduleCache = new Map();
+      isInitialLoad = true;
+      return;
+    }
+
+    try {
+      // Reset cache on fresh load to get updated schedule data
+      scheduleCache = new Map();
+      const events = await fetchNegativeEvents(rivals, DAYS_PER_LOAD, 0, scheduleCache);
+      daysLoaded = DAYS_PER_LOAD;
+      allEvents = events;
+
+      loading.classList.add('hidden');
+      empty.classList.add('hidden');
+
+      if (events.length === 0) {
+        noEvents.classList.remove('hidden');
+        feed.classList.add('hidden');
+        loadMoreContainer.classList.add('hidden');
+        endOfFeed.classList.add('hidden');
+        currentEventIds = new Set();
+        isInitialLoad = true;
+        return;
+      }
+
+      noEvents.classList.add('hidden');
+      feed.classList.remove('hidden');
+      renderFeed(events);
+
+      // Show "Load More" button if we haven't hit the max
+      if (daysLoaded < MAX_DAYS) {
+        loadMoreContainer.classList.remove('hidden');
+        endOfFeed.classList.add('hidden');
+      } else {
+        loadMoreContainer.classList.add('hidden');
+        endOfFeed.classList.remove('hidden');
+      }
+    } catch (error) {
+      console.error('Failed to load feed:', error);
+      // On error during refresh, keep existing content visible
+      if (isInitialLoad) {
+        loading.classList.add('hidden');
+        noEvents.classList.remove('hidden');
+      }
+    }
+  }
+
+  async function loadMore() {
+    const rivals = getSelectedRivals();
+    if (rivals.size === 0 || daysLoaded >= MAX_DAYS) return;
+
+    loadMoreContainer.classList.add('hidden');
+    loadingMore.classList.remove('hidden');
+
+    try {
+      const newEvents = await fetchNegativeEvents(rivals, DAYS_PER_LOAD, daysLoaded, scheduleCache);
+      daysLoaded += DAYS_PER_LOAD;
+
+      loadingMore.classList.add('hidden');
+
+      if (newEvents.length === 0) {
+        // No more events found
+        endOfFeed.classList.remove('hidden');
+        return;
+      }
+
+      // Append new events (filter out any duplicates just in case)
+      const existingIds = new Set(allEvents.map(e => e.id));
+      const uniqueNewEvents = newEvents.filter(e => !existingIds.has(e.id));
+      allEvents = [...allEvents, ...uniqueNewEvents];
+
+      // Re-render with all events (new ones will animate)
+      renderFeed(allEvents);
+
+      // Show appropriate button
+      if (daysLoaded < MAX_DAYS) {
+        loadMoreContainer.classList.remove('hidden');
+      } else {
+        endOfFeed.classList.remove('hidden');
+      }
+    } catch (error) {
+      console.error('Failed to load more:', error);
+      loadingMore.classList.add('hidden');
+      loadMoreContainer.classList.remove('hidden');
+    }
+  }
+
+  // Polling management
+  async function updatePolling() {
+    isLive = await hasLiveGames();
+    const interval = (document.hidden || !isLive) ? IDLE_INTERVAL : LIVE_INTERVAL;
+
+    if (pollIntervalId) clearInterval(pollIntervalId);
+    pollIntervalId = setInterval(loadFeed, interval);
+  }
+
+  // Visibility change handler
+  document.addEventListener('visibilitychange', async () => {
+    if (!document.hidden) {
+      await loadFeed();
+    }
+    updatePolling();
+  });
+
+  // Initial load
+  loadFeed().then(updatePolling);
+
+  // Refresh button
+  refreshBtn?.addEventListener('click', loadFeed);
+
+  // Load more button
+  loadMoreBtn?.addEventListener('click', loadMore);
+</script>

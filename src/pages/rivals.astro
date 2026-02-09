@@ -1,142 +1,448 @@
 ---
 import Layout from '../layouts/Layout.astro';
+
+// NHL Division structure (2024-25 season) - teams sorted alphabetically by abbreviation
+const divisions = {
+  atlantic: {
+    name: 'Atlantic',
+    conference: 'Eastern',
+    teams: ['BOS', 'BUF', 'DET', 'FLA', 'MTL', 'OTT', 'TBL', 'TOR']
+  },
+  metropolitan: {
+    name: 'Metropolitan',
+    conference: 'Eastern',
+    teams: ['CAR', 'CBJ', 'NJD', 'NYI', 'NYR', 'PHI', 'PIT', 'WSH']
+  },
+  central: {
+    name: 'Central',
+    conference: 'Western',
+    teams: ['CHI', 'COL', 'DAL', 'MIN', 'NSH', 'STL', 'UTA', 'WPG']
+  },
+  pacific: {
+    name: 'Pacific',
+    conference: 'Western',
+    teams: ['ANA', 'CGY', 'EDM', 'LAK', 'SEA', 'SJS', 'VAN', 'VGK']
+  }
+};
 ---
 
 <Layout title="HOCKEI - Select Rivals" activePage="rivals">
-  <div class="max-w-2xl mx-auto px-4 py-6">
+  <div class="rivals-page">
     <!-- Header -->
-    <div class="flex items-center justify-between mb-6">
-      <div>
-        <h1 class="text-2xl font-bold" style="color: var(--text-primary);">Select Rivals</h1>
-        <p class="text-sm mt-1" style="color: var(--text-secondary);">
-          <span id="count">0</span> teams selected
-        </p>
+    <div class="rivals-header">
+      <div class="rivals-header-left">
+        <h1 class="rivals-title">SELECT RIVALS</h1>
+        <p class="rivals-subtitle">Choose the teams you love to hate</p>
       </div>
-      <button
-        id="clear-btn"
-        class="btn px-3 py-1.5 text-sm font-medium rounded-lg"
-        style="background-color: rgba(255,255,255,0.1); color: var(--text-secondary);"
-      >
-        Clear all
-      </button>
+      <button id="clear-btn" class="clear-btn">Clear all</button>
     </div>
 
     <!-- Loading State -->
-    <div id="loading" class="flex flex-col items-center justify-center py-20">
-      <div class="spinner w-8 h-8 border-2 border-white/20 border-t-white/80 rounded-full mb-4"></div>
-      <p style="color: var(--text-secondary);">Loading teams...</p>
+    <div id="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading teams...</p>
     </div>
 
-    <!-- Team List -->
-    <div id="team-list" class="hidden space-y-1"></div>
+    <!-- Team List by Division -->
+    <div id="team-list" class="team-list hidden">
+      {Object.entries(divisions).map(([key, division]) => (
+        <div class="division-section" data-division={key}>
+          <div class="division-header">{division.name}</div>
+          <div class="division-teams">
+            {division.teams.map(abbrev => (
+              <div class="team-row" data-abbrev={abbrev}>
+                <div class="team-logo">
+                  <img src={`/logos/${abbrev.toLowerCase()}.png`} alt={abbrev} />
+                </div>
+                <div class="team-info">
+                  <div class="team-name" data-abbrev={abbrev}></div>
+                  <div class="team-abbrev">{abbrev}</div>
+                </div>
+                <div class="team-check">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                  </svg>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <!-- Floating Counter -->
+    <div id="floating-counter" class="floating-counter hidden">
+      <div class="floating-pill">
+        <span class="floating-count"><span id="count">0</span> rivals selected</span>
+        <a href="/" class="floating-done">Done</a>
+      </div>
+    </div>
   </div>
 </Layout>
+
+<style>
+  .rivals-page {
+    max-width: 600px;
+    margin: 0 auto;
+    padding-bottom: 120px;
+  }
+
+  /* Header */
+  .rivals-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 20px 20px 16px;
+    position: sticky;
+    top: 56px;
+    background: linear-gradient(to bottom, var(--bg-arena) 70%, transparent);
+    z-index: 20;
+  }
+
+  @media (max-width: 600px) {
+    .rivals-header {
+      top: 48px;
+    }
+  }
+
+  .rivals-title {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    letter-spacing: 0.1em;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .rivals-subtitle {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    letter-spacing: 0.05em;
+  }
+
+  .clear-btn {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    padding: 8px 14px;
+    background: transparent;
+    border: 1px solid var(--border-visible);
+    border-radius: 6px;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+  }
+
+  .clear-btn:hover {
+    border-color: var(--text-tertiary);
+    color: var(--text-secondary);
+  }
+
+  /* Loading State */
+  .loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    color: var(--text-secondary);
+  }
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 2px solid var(--border-visible);
+    border-top-color: var(--text-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 16px;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Team List */
+  .team-list {
+    padding: 0;
+  }
+
+  .team-list.hidden {
+    display: none;
+  }
+
+  /* Division Section */
+  .division-section {
+    margin-bottom: 4px;
+  }
+
+  .division-header {
+    position: sticky;
+    top: 112px;
+    z-index: 10;
+    padding: 12px 20px;
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border-subtle);
+    border-bottom: 1px solid var(--border-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  @media (max-width: 600px) {
+    .division-header {
+      top: 104px;
+    }
+  }
+
+  .division-header::before {
+    content: '';
+    width: 3px;
+    height: 14px;
+    background: var(--text-tertiary);
+    border-radius: 2px;
+  }
+
+  /* Team Row */
+  .team-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .team-row:hover {
+    background: var(--bg-surface);
+  }
+
+  .team-row.selected {
+    background: rgba(229, 57, 53, 0.06);
+  }
+
+  .team-logo {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+  }
+
+  .team-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .team-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .team-name {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 1px;
+  }
+
+  .team-abbrev {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    letter-spacing: 0.05em;
+  }
+
+  .team-check {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border-visible);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    color: white;
+  }
+
+  .team-check svg {
+    width: 12px;
+    height: 12px;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .team-row.selected .team-check {
+    background: var(--accent-red);
+    border-color: var(--accent-red);
+  }
+
+  .team-row.selected .team-check svg {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* Floating Counter */
+  .floating-counter {
+    position: fixed;
+    bottom: 24px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    padding: 0 20px;
+    z-index: 50;
+    pointer-events: none;
+  }
+
+  .floating-counter.hidden {
+    display: none;
+  }
+
+  .floating-pill {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 16px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-visible);
+    border-radius: 6px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    pointer-events: auto;
+  }
+
+  .floating-count {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    letter-spacing: 0.02em;
+  }
+
+  .floating-count span {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  .floating-done {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    padding: 8px 14px;
+    background: transparent;
+    border: 1px solid var(--border-visible);
+    border-radius: 6px;
+    color: var(--text-tertiary);
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+  }
+
+  .floating-done:hover {
+    border-color: var(--text-tertiary);
+    color: var(--text-secondary);
+  }
+
+  /* Hide loading when done */
+  #loading.hidden {
+    display: none;
+  }
+</style>
 
 <script>
   import { fetchTeams } from '../lib/nhl.js';
   import { getSelectedRivals, toggleRival, clearAllRivals } from '../lib/store.js';
-  import { getTeamColors, accentRed } from '../lib/teamColors.js';
 
   const loading = document.getElementById('loading');
   const teamList = document.getElementById('team-list');
   const clearBtn = document.getElementById('clear-btn');
   const countEl = document.getElementById('count');
+  const floatingCounter = document.getElementById('floating-counter');
 
   let selectedRivals = getSelectedRivals();
+  let teamsData: Map<string, { name: string; commonName: string }> = new Map();
 
   function updateCount() {
+    const count = selectedRivals.size;
     if (countEl) {
-      countEl.textContent = selectedRivals.size.toString();
+      countEl.textContent = count.toString();
+    }
+    // Show/hide floating counter
+    if (floatingCounter) {
+      floatingCounter.classList.toggle('hidden', count === 0);
     }
   }
 
-  function createTeamRow(team) {
-    const isSelected = selectedRivals.has(team.abbreviation);
-    const colors = getTeamColors(team.abbreviation);
-
-    return `
-      <button
-        class="team-row w-full flex items-center gap-4 p-3 rounded-lg text-left"
-        data-abbrev="${team.abbreviation}"
-        style="background-color: ${isSelected ? 'rgba(205, 92, 92, 0.15)' : 'transparent'};"
-      >
-        <img
-          src="/logos/${team.abbreviation.toLowerCase()}.png"
-          alt="${team.name}"
-          class="w-10 h-10 object-contain"
-        />
-        <div class="flex-1 min-w-0">
-          <p class="font-medium truncate" style="color: var(--text-primary);">
-            ${team.name}
-          </p>
-          <p class="text-sm" style="color: var(--text-muted);">
-            ${team.abbreviation}
-          </p>
-        </div>
-        <div
-          class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all"
-          style="border-color: ${isSelected ? accentRed : 'rgba(255,255,255,0.3)'}; background-color: ${isSelected ? accentRed : 'transparent'};"
-        >
-          ${isSelected ? `
-            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-            </svg>
-          ` : ''}
-        </div>
-      </button>
-    `;
+  function updateRowState(row: HTMLElement, isSelected: boolean) {
+    row.classList.toggle('selected', isSelected);
   }
 
-  function renderTeams(teams) {
-    if (!teamList) return;
-    teamList.innerHTML = teams.map(createTeamRow).join('');
-    updateCount();
-  }
+  function handleTeamClick(e: Event) {
+    const row = (e.target as HTMLElement).closest('.team-row') as HTMLElement;
+    if (!row) return;
 
-  function handleTeamClick(e) {
-    const btn = e.target.closest('.team-row');
-    if (!btn) return;
-
-    const abbrev = btn.dataset.abbrev;
+    const abbrev = row.dataset.abbrev;
     if (!abbrev) return;
 
     selectedRivals = toggleRival(abbrev);
-
-    // Re-render the clicked row
-    const isSelected = selectedRivals.has(abbrev);
-    const colors = getTeamColors(abbrev);
-
-    btn.style.backgroundColor = isSelected ? 'rgba(205, 92, 92, 0.15)' : 'transparent';
-
-    const checkbox = btn.querySelector('.w-6.h-6');
-    if (checkbox) {
-      checkbox.style.borderColor = isSelected ? accentRed : 'rgba(255,255,255,0.3)';
-      checkbox.style.backgroundColor = isSelected ? accentRed : 'transparent';
-      checkbox.innerHTML = isSelected ? `
-        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-        </svg>
-      ` : '';
-    }
-
+    updateRowState(row, selectedRivals.has(abbrev));
     updateCount();
   }
 
   async function loadTeams() {
     try {
       const teams = await fetchTeams();
+
+      // Build lookup map
+      teams.forEach(team => {
+        teamsData.set(team.abbreviation, {
+          name: team.name,
+          commonName: team.commonName
+        });
+      });
+
+      // Populate team names
+      document.querySelectorAll('.team-name').forEach(el => {
+        const abbrev = el.getAttribute('data-abbrev');
+        if (abbrev && teamsData.has(abbrev)) {
+          el.textContent = teamsData.get(abbrev)!.name;
+        }
+      });
+
+      // Set initial selected states
+      document.querySelectorAll('.team-row').forEach(row => {
+        const abbrev = (row as HTMLElement).dataset.abbrev;
+        if (abbrev && selectedRivals.has(abbrev)) {
+          row.classList.add('selected');
+        }
+      });
+
+      // Hide loading, show list
       loading?.classList.add('hidden');
       teamList?.classList.remove('hidden');
-      renderTeams(teams);
 
-      // Add click handler
+      updateCount();
+
+      // Add click handlers
       teamList?.addEventListener('click', handleTeamClick);
     } catch (error) {
       console.error('Failed to load teams:', error);
       if (loading) {
         loading.innerHTML = `
           <p style="color: var(--accent-red);">Failed to load teams</p>
-          <button onclick="location.reload()" class="btn mt-4 px-4 py-2 rounded-lg" style="background-color: var(--accent-red); color: white;">
+          <button onclick="location.reload()" style="margin-top: 16px; padding: 10px 20px; background: var(--accent-red); border: none; border-radius: 8px; color: white; cursor: pointer;">
             Retry
           </button>
         `;
@@ -145,10 +451,12 @@ import Layout from '../layouts/Layout.astro';
   }
 
   // Clear all handler
-  clearBtn?.addEventListener('click', async () => {
+  clearBtn?.addEventListener('click', () => {
     selectedRivals = clearAllRivals();
-    const teams = await fetchTeams();
-    renderTeams(teams);
+    document.querySelectorAll('.team-row.selected').forEach(row => {
+      row.classList.remove('selected');
+    });
+    updateCount();
   });
 
   // Initial load

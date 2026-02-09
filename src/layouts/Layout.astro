@@ -5,9 +5,10 @@ import Analytics from '@vercel/analytics/astro'
 interface Props {
   title: string;
   activePage?: 'feed' | 'rivals' | 'stats';
+  glassMode?: boolean;
 }
 
-const { title, activePage = 'feed' } = Astro.props;
+const { title, activePage = 'feed', glassMode = false } = Astro.props;
 ---
 
 <!doctype html>
@@ -19,52 +20,537 @@ const { title, activePage = 'feed' } = Astro.props;
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <title>{title}</title>
     <Analytics />
   </head>
-  <body class="min-h-screen">
-    <!-- Navigation -->
-    <nav class="fixed top-0 left-0 right-0 z-50 border-b" style="background-color: var(--bg-dark); border-color: var(--border-subtle);">
-      <div class="max-w-2xl mx-auto px-4">
-        <div class="flex items-center justify-between h-14">
-          <!-- Logo/Title -->
-          <a href="/" class="flex flex-col">
-            <span class="text-base font-bold tracking-wide uppercase headline" style="color: var(--accent-red);">HOCKEI</span>
-            <span class="text-[9px] tracking-wide" style="color: var(--text-muted);">Highly Optimized Coverage of Key Events (Impartial)</span>
-          </a>
+  <body class={glassMode ? 'glass-mode' : ''}>
+    <!-- Glass Surface Layers (visible in glass mode) -->
+    {glassMode && (
+      <div id="arena">
+        <div class="frost-layer"></div>
+        <div class="glass-scratches"></div>
+        <div class="glass-reflection"></div>
+        <div class="glass-frame"></div>
+        <!-- Crack effects render here -->
+        <div id="crack-layer"></div>
+        <!-- Impact flashes render here -->
+        <div id="flash-layer"></div>
+      </div>
+    )}
 
-          <!-- Navigation Links -->
-          <div class="flex gap-6">
-            <a
-              href="/"
-              class={`nav-link text-sm font-medium ${activePage === 'feed' ? 'active' : ''}`}
-              style={`color: ${activePage === 'feed' ? 'var(--text-primary)' : 'var(--text-secondary)'};`}
-            >
-              Feed
-            </a>
-            <a
-              href="/stats"
-              class={`nav-link text-sm font-medium ${activePage === 'stats' ? 'active' : ''}`}
-              style={`color: ${activePage === 'stats' ? 'var(--text-primary)' : 'var(--text-secondary)'};`}
-            >
-              Stats
-            </a>
-            <a
-              href="/rivals"
-              class={`nav-link text-sm font-medium ${activePage === 'rivals' ? 'active' : ''}`}
-              style={`color: ${activePage === 'rivals' ? 'var(--text-primary)' : 'var(--text-secondary)'};`}
-            >
-              Rivals
-            </a>
-          </div>
+    <!-- Navigation -->
+    <nav id="top-nav" class="fixed top-0 left-0 right-0 z-50">
+      <div class="nav-inner">
+        <!-- Logo/Title -->
+        <a href="/" class="nav-logo">
+          <svg class="nav-logo-mark" viewBox="0 0 32 32" fill="none">
+            <rect x="4" y="4" width="7" height="24" rx="1.5" fill="currentColor"/>
+            <rect x="21" y="4" width="7" height="24" rx="1.5" fill="currentColor"/>
+            <rect x="11" y="12" width="10" height="8" rx="1.5" fill="currentColor"/>
+            <rect x="12" y="26" width="8" height="3" rx="1" fill="#E53935"/>
+          </svg>
+          <span class="nav-logo-text">HOCKEI</span>
+          <span class="nav-logo-divider"></span>
+          <span class="nav-logo-acronym"><b>H</b>ighly <b>O</b>ptimized <b>C</b>overage of <b>K</b>ey <b>E</b>vents (<b>I</b>mpartial)</span>
+        </a>
+
+        <!-- Navigation Links -->
+        <div class="nav-links">
+          <a
+            href="/"
+            class={`nav-link ${activePage === 'feed' ? 'active' : ''}`}
+          >
+            Feed
+          </a>
+          <a
+            href="/stats"
+            class={`nav-link ${activePage === 'stats' ? 'active' : ''}`}
+          >
+            Stats
+          </a>
+          <a
+            href="/rivals"
+            class={`nav-link ${activePage === 'rivals' ? 'active' : ''}`}
+          >
+            Rivals
+          </a>
+        </div>
+
+        <!-- Live indicator (shown via JS when games are live) -->
+        <div id="live-badge" class="live-badge" style="display: none;">
+          <div class="live-dot"></div>
+          <span>Live</span>
         </div>
       </div>
     </nav>
 
     <!-- Main Content -->
-    <main class="pt-14 min-h-screen">
+    <main id="main-content" class={glassMode ? 'glass-main' : 'standard-main'}>
       <slot />
     </main>
+
+    <!-- Feed Drawer (desktop glass mode only) -->
+    {glassMode && (
+      <div id="feed-drawer" class="feed-drawer">
+        <div class="drawer-handle" id="drawer-handle">
+          <div class="drawer-handle-bar"></div>
+          <span class="drawer-handle-text">HISTORY</span>
+        </div>
+        <div class="drawer-content" id="drawer-content">
+          <!-- Legacy feed cards populated by JS -->
+        </div>
+      </div>
+    )}
+
+    <!-- Drawer backdrop -->
+    {glassMode && (
+      <div id="drawer-backdrop" class="drawer-backdrop"></div>
+    )}
+
+    <style>
+      /* =============================================
+         LAYOUT STYLES
+         ============================================= */
+
+      body {
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      body.glass-mode {
+        overflow: hidden;
+      }
+
+      /* =============================================
+         ARENA (Glass container)
+         ============================================= */
+
+      #arena {
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+        z-index: 0;
+      }
+
+      #crack-layer,
+      #flash-layer {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 15;
+      }
+
+      #flash-layer {
+        z-index: 14;
+      }
+
+      /* =============================================
+         NAVIGATION
+         ============================================= */
+
+      #top-nav {
+        height: 56px;
+        padding: 0 24px;
+        display: flex;
+        align-items: center;
+        background: linear-gradient(to bottom, var(--bg-arena) 60%, transparent);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+      }
+
+      .nav-inner {
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .nav-logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        color: var(--text-primary);
+      }
+
+      .nav-logo-mark {
+        width: 28px;
+        height: 28px;
+        color: var(--text-tertiary);
+        transition: color 0.2s ease;
+      }
+
+      .nav-logo:hover .nav-logo-mark {
+        color: var(--text-secondary);
+      }
+
+      .nav-logo-text {
+        font-family: var(--font-display);
+        font-size: 1.4rem;
+        letter-spacing: 0.12em;
+        color: var(--text-secondary);
+        transition: color 0.2s ease;
+        line-height: 1;
+      }
+
+      .nav-logo:hover .nav-logo-text {
+        color: var(--text-primary);
+      }
+
+      .nav-logo-divider {
+        width: 1px;
+        height: 20px;
+        background: var(--border-visible);
+        margin: 0 12px;
+      }
+
+      .nav-logo-acronym {
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        font-weight: 400;
+        letter-spacing: 0.02em;
+        color: var(--text-tertiary);
+        transition: color 0.2s ease;
+      }
+
+      .nav-logo-acronym b {
+        font-weight: 600;
+        color: var(--text-secondary);
+      }
+
+      .nav-logo:hover .nav-logo-acronym {
+        color: var(--text-secondary);
+      }
+
+      .nav-logo:hover .nav-logo-acronym b {
+        color: var(--text-primary);
+      }
+
+      .nav-links {
+        display: flex;
+        gap: 24px;
+      }
+
+      .live-badge {
+        margin-left: 16px;
+      }
+
+      /* =============================================
+         MAIN CONTENT
+         ============================================= */
+
+      .standard-main {
+        padding-top: 56px;
+        min-height: 100vh;
+      }
+
+      .glass-main {
+        position: fixed;
+        inset: 0;
+        padding-top: 56px;
+        overflow: hidden;
+        z-index: 10;
+      }
+
+      /* =============================================
+         FEED DRAWER (Desktop only)
+         ============================================= */
+
+      .feed-drawer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 70vh;
+        max-height: calc(100vh - 80px);
+        background: var(--bg-arena);
+        border-top: 1px solid var(--border-subtle);
+        border-radius: 20px 20px 0 0;
+        z-index: 70;
+        transform: translateY(calc(100% - 48px));
+        transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+        display: flex;
+        flex-direction: column;
+      }
+
+      .feed-drawer.open {
+        transform: translateY(0);
+      }
+
+      .drawer-handle {
+        flex-shrink: 0;
+        height: 48px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .drawer-handle-bar {
+        width: 40px;
+        height: 4px;
+        background: var(--text-tertiary);
+        border-radius: 2px;
+        transition: background 0.2s ease;
+      }
+
+      .drawer-handle:hover .drawer-handle-bar {
+        background: var(--text-secondary);
+      }
+
+      .drawer-handle-text {
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--text-tertiary);
+        letter-spacing: 0.15em;
+        transition: color 0.2s ease;
+      }
+
+      .drawer-handle:hover .drawer-handle-text {
+        color: var(--text-secondary);
+      }
+
+      .feed-drawer.open .drawer-handle-text {
+        opacity: 0;
+      }
+
+      .drawer-content {
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 0 24px 24px;
+        max-width: 600px;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      .drawer-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 65;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.4s ease;
+      }
+
+      .drawer-backdrop.visible {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      /* Hide drawer on mobile - mobile uses feed-only mode */
+      @media (max-width: 600px) {
+        .feed-drawer,
+        .drawer-backdrop {
+          display: none;
+        }
+      }
+
+      /* =============================================
+         RESPONSIVE
+         ============================================= */
+
+      @media (max-width: 600px) {
+        /* Mobile: disable glass mode, use standard scrolling */
+        body.glass-mode {
+          overflow: auto;
+        }
+
+        /* Hide glass effects on mobile */
+        #arena {
+          display: none;
+        }
+
+        #top-nav {
+          height: 48px;
+          padding: 0 16px;
+          background: var(--bg-arena);
+        }
+
+        .nav-logo-mark {
+          width: 24px;
+          height: 24px;
+        }
+
+        .nav-logo-text {
+          font-size: 1.2rem;
+        }
+
+        .nav-logo-divider,
+        .nav-logo-acronym {
+          display: none;
+        }
+
+        .nav-links {
+          gap: 16px;
+        }
+
+        .glass-main {
+          position: relative;
+          padding-top: 48px;
+          overflow: visible;
+          min-height: 100vh;
+        }
+      }
+    </style>
+
+    <script>
+      // Screen shake helper
+      function shakeScreen(heavy = false) {
+        const arena = document.getElementById('arena');
+        if (!arena) return;
+        arena.classList.remove('shake-light', 'shake-heavy');
+        void arena.offsetWidth; // force reflow
+        arena.classList.add(heavy ? 'shake-heavy' : 'shake-light');
+        setTimeout(() => arena.classList.remove('shake-light', 'shake-heavy'), heavy ? 220 : 140);
+      }
+
+      // Expose globally for use by page scripts
+      (window as any).shakeScreen = shakeScreen;
+
+      // Feed drawer interaction
+      const drawer = document.getElementById('feed-drawer');
+      const drawerHandle = document.getElementById('drawer-handle');
+      const drawerBackdrop = document.getElementById('drawer-backdrop');
+
+      if (drawer && drawerHandle && drawerBackdrop) {
+        let isDragging = false;
+        let startY = 0;
+        let startTranslateY = 0;
+        const drawerHeight = drawer.offsetHeight;
+        const collapsedOffset = drawerHeight - 48; // Only handle visible when collapsed
+
+        function openDrawer() {
+          drawer.classList.add('open');
+          drawerBackdrop.classList.add('visible');
+          drawer.style.transform = '';
+          window.dispatchEvent(new CustomEvent('drawer-toggle', { detail: { open: true } }));
+        }
+
+        function closeDrawer() {
+          drawer.classList.remove('open');
+          drawerBackdrop.classList.remove('visible');
+          drawer.style.transform = '';
+          window.dispatchEvent(new CustomEvent('drawer-toggle', { detail: { open: false } }));
+        }
+
+        function toggleDrawer() {
+          if (drawer.classList.contains('open')) {
+            closeDrawer();
+          } else {
+            openDrawer();
+          }
+        }
+
+        // Get current translateY value
+        function getCurrentTranslateY(): number {
+          const style = window.getComputedStyle(drawer);
+          const matrix = new DOMMatrix(style.transform);
+          return matrix.m42;
+        }
+
+        // Drag start
+        function onDragStart(clientY: number) {
+          isDragging = true;
+          startY = clientY;
+          startTranslateY = getCurrentTranslateY();
+          drawer.style.transition = 'none';
+        }
+
+        // Drag move
+        function onDragMove(clientY: number) {
+          if (!isDragging) return;
+
+          const deltaY = clientY - startY;
+          let newTranslateY = startTranslateY + deltaY;
+
+          // Clamp: can't go above fully open (0) or below collapsed position
+          newTranslateY = Math.max(0, Math.min(collapsedOffset, newTranslateY));
+
+          drawer.style.transform = `translateY(${newTranslateY}px)`;
+
+          // Update backdrop opacity based on position
+          const progress = 1 - (newTranslateY / collapsedOffset);
+          drawerBackdrop.style.opacity = String(progress);
+          if (progress > 0) {
+            drawerBackdrop.classList.add('visible');
+          }
+        }
+
+        // Drag end
+        function onDragEnd() {
+          if (!isDragging) return;
+          isDragging = false;
+
+          drawer.style.transition = '';
+          drawerBackdrop.style.opacity = '';
+
+          const currentY = getCurrentTranslateY();
+          const threshold = collapsedOffset * 0.5;
+
+          // If dragged past halfway, snap to that state
+          if (currentY < threshold) {
+            openDrawer();
+          } else {
+            closeDrawer();
+          }
+        }
+
+        // Mouse events
+        drawerHandle.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          onDragStart(e.clientY);
+        });
+
+        document.addEventListener('mousemove', (e) => {
+          onDragMove(e.clientY);
+        });
+
+        document.addEventListener('mouseup', () => {
+          onDragEnd();
+        });
+
+        // Touch events
+        drawerHandle.addEventListener('touchstart', (e) => {
+          onDragStart(e.touches[0].clientY);
+        }, { passive: true });
+
+        document.addEventListener('touchmove', (e) => {
+          if (isDragging) {
+            onDragMove(e.touches[0].clientY);
+          }
+        }, { passive: true });
+
+        document.addEventListener('touchend', () => {
+          onDragEnd();
+        });
+
+        // Click to toggle (only if not dragging)
+        let clickStartY = 0;
+        drawerHandle.addEventListener('mousedown', (e) => {
+          clickStartY = e.clientY;
+        });
+        drawerHandle.addEventListener('mouseup', (e) => {
+          // Only toggle if it wasn't a drag (moved less than 5px)
+          if (Math.abs(e.clientY - clickStartY) < 5) {
+            toggleDrawer();
+          }
+        });
+
+        drawerBackdrop.addEventListener('click', closeDrawer);
+
+        // Expose for page scripts
+        (window as any).openFeedDrawer = openDrawer;
+        (window as any).closeFeedDrawer = closeDrawer;
+      }
+    </script>
   </body>
 </html>
