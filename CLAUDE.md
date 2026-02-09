@@ -9,24 +9,30 @@ Astro + Tailwind CSS v4 + Vanilla JS, deployed on Vercel
 ```
 src/
 ├── pages/
-│   ├── index.astro          # Main feed with auto-refresh polling
-│   ├── rivals.astro         # Team selection grid
+│   ├── index.astro          # Main feed - glass UI (desktop) / stacked feed (mobile)
+│   ├── rivals.astro         # Team selection with division grouping
+│   ├── stats.astro          # Team stats page (Intel Dossier style)
 │   ├── test.astro           # Component test page (cards, animations, curses)
 │   └── api/nhl/[...path].js # CORS proxy → api-web.nhle.com/v1/*
 ├── layouts/
-│   └── Layout.astro         # Nav + page wrapper
+│   └── Layout.astro         # Nav + page wrapper + feed drawer (desktop)
 ├── lib/
 │   ├── nhl.js               # NHL API: fetchTeams, fetchScores, fetchPlayByPlay, fetchNegativeEvents, hasLiveGames, fetchLosingStreak
-│   ├── cards.js             # HTML generators: createGoalCard(event, isNew), createLossCard(event, isNew)
+│   ├── cards.js             # Card HTML generators (glass + feed variants)
+│   ├── glassEffects.js      # Crack effects, impact animations, screen shake
 │   ├── store.js             # localStorage: getSelectedRivals, toggleRival, clearAllRivals
 │   ├── teamColors.js        # Team colors map + getTeamColors(abbrev), accentRed
 │   └── curses/              # "Cursed Numbers" - embarrassing stats framework
-│       ├── index.js         # computeCursesForTeam(abbrev), computeCursesForTeams(abbrevs)
+│       ├── index.js         # computeCursesForTeam(abbrev), computeCursesWithContext(abbrev)
 │       ├── templates.js     # Curse template definitions (day droughts, streaks, etc.)
-│       └── compute.js       # Helper functions for stat calculations
+│       ├── compute.js       # Helper functions for stat calculations
+│       └── statsCard.js     # HTML generator for curse stat cards (dossier style)
 └── styles/
-    └── global.css           # CSS variables, card styles, animations (card-enter for new cards)
+    └── global.css           # Midnight Navy theme, glass effects, card styles, animations
 public/
+├── favicon.svg              # Site favicon (H logo with red accent)
+├── logo-hockei.svg          # Full color logo
+├── logo-hockei-mono.svg     # Monochrome logo
 └── logos/                   # 32 team PNGs (lowercase abbrev: tor.png, bos.png)
 ```
 
@@ -34,7 +40,9 @@ public/
 - Team IDs use 3-letter abbreviations (TOR, BOS, NYR)
 - NHL API base: `https://api-web.nhle.com/v1` (proxied via `/api/nhl/*`)
 - NHL API `gameState` values: FUT (future), PRE (pre-game), LIVE, CRIT (critical), OFF/FINAL (finished)
-- Colors: `--bg-dark`, `--bg-card`, `--accent-red` (see global.css for values)
+- Theme: Midnight Navy (cool blue tint) - `--bg-arena`, `--bg-surface`, `--accent-red`
+- Desktop: Glass UI with scattered cards, crack effects, depth-shift hover
+- Mobile: Stacked feed layout (no glass effects)
 
 ## Key Behaviors
 - **Auto-refresh**: Polls every 20s during live games, 5min otherwise. Pauses when tab hidden.
@@ -44,6 +52,7 @@ public/
 
 ## Commands
 ```bash
+npm install      # Install dependencies (first time)
 npm run dev      # Start dev server
 npm run build    # Production build
 npm run preview  # Preview build
