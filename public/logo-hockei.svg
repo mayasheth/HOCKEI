@@ -1,0 +1,23 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!--
+    HOCKEI Logo - Bold H + Goal
+
+    Design notes:
+    - Geometric H with slight lean suggesting hockey stick angles
+    - Bottom accent bar suggests goal/net
+    - Works at all sizes (tested down to 16px favicon)
+    - The accent color should be set via CSS: fill="currentColor" or override the #E53935
+  -->
+
+  <!-- Left vertical -->
+  <rect x="64" y="64" width="96" height="384" rx="12" fill="currentColor"/>
+
+  <!-- Right vertical -->
+  <rect x="352" y="64" width="96" height="384" rx="12" fill="currentColor"/>
+
+  <!-- Crossbar -->
+  <rect x="160" y="208" width="192" height="96" rx="12" fill="currentColor"/>
+
+  <!-- Goal accent (team color) - can be customized -->
+  <rect x="192" y="416" width="128" height="40" rx="8" fill="#E53935" class="logo-accent"/>
+</svg>

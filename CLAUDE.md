@@ -11,6 +11,7 @@ src/
 ├── pages/
 │   ├── index.astro          # Main feed with auto-refresh polling
 │   ├── rivals.astro         # Team selection grid
+│   ├── stats.astro          # Team stats page with curse cards
 │   ├── test.astro           # Component test page (cards, animations, curses)
 │   └── api/nhl/[...path].js # CORS proxy → api-web.nhle.com/v1/*
 ├── layouts/
@@ -23,10 +24,12 @@ src/
 │   └── curses/              # "Cursed Numbers" - embarrassing stats framework
 │       ├── index.js         # computeCursesForTeam(abbrev), computeCursesForTeams(abbrevs)
 │       ├── templates.js     # Curse template definitions (day droughts, streaks, etc.)
-│       └── compute.js       # Helper functions for stat calculations
+│       ├── compute.js       # Helper functions for stat calculations
+│       └── statsCard.js     # HTML generator for curse stat cards
 └── styles/
     └── global.css           # CSS variables, card styles, animations (card-enter for new cards)
 public/
+├── favicon.svg              # Site favicon
 └── logos/                   # 32 team PNGs (lowercase abbrev: tor.png, bos.png)
 ```
 
@@ -44,6 +47,7 @@ public/
 
 ## Commands
 ```bash
+npm install      # Install dependencies (first time)
 npm run dev      # Start dev server
 npm run build    # Production build
 npm run preview  # Preview build

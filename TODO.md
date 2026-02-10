@@ -1,11 +1,33 @@
 # HOCKEI - Feature Backlog
 
-## Priority Features
+## Glass UI Implementation (In Progress)
 
-- [x] fix arrow symbols showing as emoji on iOS instead of icon - use consistent red icon styling
-- [x] update branding to new name (HOCKEI, Highly Optimized Coverage of Key Events (Impartial))
-- [x] update CLAUDE.md with current code structure
-- [x] move the color/preview page to be on a preview/temp branch, not main
+### Current Tasks
+- [ ] **Update/reformat feed cards** - Improve the card design in the feed drawer and mobile view
+- [x] Glass UI global styles and theme
+- [x] Desktop scattered card layout with aging
+- [x] Card impact animations and crack effects
+- [x] Glitch effect on victim logos (chromatic aberration)
+- [x] **Feed drawer** - Bottom pull-up drawer for linear timeline view
+  - Uses feed card styles (left colored border, no glitch)
+  - Mobile: Feed is the ONLY view (no glass mode)
+  - Desktop: Drawer pulls up over glass, glass dims behind
+  - Draggable open/close with snap behavior
+- [ ] Update idle/empty state styling
+- [ ] Optimize HOCKEI branding
+- [ ] Design Stats page for glass UI
+- [ ] Design Rivals selection page for glass UI
+
+### Alternative Feed Approaches (Future Reference)
+- **Option 2: Mode Toggle** - Segmented control in nav `[GLASS | FEED]` to switch views entirely
+- **Option 3: Scroll Transition** - Glass fixed at viewport height, scrolling down reveals linear feed below
+
+---
+
+## Priority Features
+- [ ] design and integrate favicon/logo
+- [ ] fix losing streak calculations to be specific to date of game
+
 
 ### New Cards
 - [x] **Losing Streak Card** - Loss cards show streak footer when team has 3+ consecutive losses
@@ -26,8 +48,6 @@
 
 ### UX Improvements
 - [ ] **Goal Video Link** - Add button linking to goal replay for goals against (link from NHL API a few minutes after the goal is scored)
-- [x] **Card Animations** - Scale pop animation for new cards during live updates
-- [x] **Auto-Refresh** - Automatically refresh feed for live game updates (20s live, 5min idle)
 
 ---
 
@@ -69,3 +89,9 @@
 - [x] Day separators in feed
 - [x] 72-hour data loading
 - [x] Team color dark mode overrides
+- [x] fix arrow symbols showing as emoji on iOS instead of icon - use consistent red icon styling
+- [x] update branding to new name (HOCKEI, Highly Optimized Coverage of Key Events (Impartial))
+- [x] update CLAUDE.md with current code structure
+- [x] move the color/preview page to be on a preview/temp branch, not main
+- [x] **Card Animations** - Scale pop animation for new cards during live updates
+- [x] **Auto-Refresh** - Automatically refresh feed for live game updates (20s live, 5min idle)

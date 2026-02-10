@@ -2,291 +2,488 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="HOCKEI - Feed" activePage="feed">
-  <div class="max-w-2xl mx-auto px-4 py-6">
-    <!-- Header -->
-    <div class="flex justify-end mb-4">
-      <button
-        id="refresh-btn"
-        class="btn px-3 py-1.5 text-sm font-medium rounded-lg"
-        style="background-color: var(--accent-red); color: white;"
-      >
-        Refresh
-      </button>
+<Layout title="HOCKEI - Feed" activePage="feed" glassMode={true}>
+  <!-- Event layer for scattered cards -->
+  <div id="event-layer"></div>
+
+  <!-- Idle state -->
+  <div id="idle-state" class="idle-state">
+    <div class="idle-title">WATCHING</div>
+    <div class="idle-dots">
+      <div class="idle-dot"></div>
+      <div class="idle-dot"></div>
+      <div class="idle-dot"></div>
     </div>
-
-    <!-- Loading State -->
-    <div id="loading" class="flex flex-col items-center justify-center py-20">
-      <div class="spinner w-8 h-8 border-2 border-white/20 border-t-white/80 rounded-full mb-4"></div>
-      <p style="color: var(--text-secondary);">Loading your rivals' misfortune...</p>
-    </div>
-
-    <!-- Empty State -->
-    <div id="empty" class="hidden text-center py-20">
-      <p class="text-xl mb-2" style="color: var(--text-secondary);">No rivals selected</p>
-      <p class="mb-6" style="color: var(--text-muted);">Pick some teams you love to hate</p>
-      <a
-        href="/rivals"
-        class="btn inline-block px-6 py-2 rounded-lg font-medium"
-        style="background-color: var(--accent-red); color: white;"
-      >
-        Select rivals
-      </a>
-    </div>
-
-    <!-- No Events State -->
-    <div id="no-events" class="hidden text-center py-20">
-      <p class="text-xl mb-2" style="color: var(--text-secondary);">Nothing to celebrate... yet</p>
-      <p style="color: var(--text-muted);">Your rivals haven't suffered recently</p>
-    </div>
-
-    <!-- Events Feed -->
-    <div id="feed" class="hidden space-y-4"></div>
-
-    <!-- Load More -->
-    <div id="load-more-container" class="hidden py-6 text-center">
-      <button
-        id="load-more-btn"
-        class="btn px-6 py-2 text-sm font-medium rounded-lg"
-        style="background-color: var(--bg-card); color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.1);"
-      >
-        Load earlier games
-      </button>
-    </div>
-
-    <!-- Loading More Indicator -->
-    <div id="loading-more" class="hidden py-6 text-center">
-      <div class="inline-flex items-center gap-2">
-        <div class="spinner w-4 h-4 border-2 border-white/20 border-t-white/80 rounded-full"></div>
-        <span class="text-sm" style="color: var(--text-secondary);">Loading more...</span>
-      </div>
-    </div>
-
-    <!-- End of Feed -->
-    <div id="end-of-feed" class="hidden py-6 text-center">
-      <span class="text-sm" style="color: var(--text-muted);">No more games to load</span>
-    </div>
-
+    <p class="idle-subtitle">No misfortune yet</p>
   </div>
+
+  <!-- No rivals selected state -->
+  <div id="empty-state" class="idle-state hidden">
+    <div class="idle-title">NO RIVALS</div>
+    <p class="idle-subtitle" style="margin-top: 24px;">
+      <a href="/rivals" style="color: var(--text-primary); text-decoration: underline;">Select some teams</a> you love to hate
+    </p>
+  </div>
+
 </Layout>
+
+<style>
+  .idle-state {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+    transition: opacity 0.6s ease;
+  }
+
+  .idle-state.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+</style>
+
+<!-- Global styles for dynamically created event cards -->
+<style is:global>
+  /* Base event layer styles */
+  #event-layer {
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  #event-layer > * {
+    pointer-events: auto;
+  }
+
+  /* Desktop: scattered absolute positioning with depth */
+  @media (min-width: 601px) {
+    #event-layer {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      perspective: 1000px;
+      transform-style: preserve-3d;
+    }
+
+    #event-layer .event-card {
+      position: absolute;
+      transition:
+        left 6s ease-out,
+        top 6s ease-out,
+        opacity 0.4s ease,
+        transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+        filter 0.4s ease;
+      transform-style: preserve-3d;
+      z-index: 1;
+    }
+
+    #event-layer .event-card.aging {
+      opacity: 0.6;
+      transform: scale(0.85);
+    }
+
+    #event-layer .event-card.ancient {
+      opacity: 0.35;
+      transform: scale(0.7);
+    }
+
+    /* Depth shift hover effect */
+    #event-layer:has(.event-card:hover) .event-card:not(:hover) {
+      transform: scale(0.9) translateZ(-50px);
+      opacity: 0.3;
+      filter: blur(1px);
+    }
+
+    #event-layer:has(.event-card:hover) .event-card.aging:not(:hover) {
+      transform: scale(0.75) translateZ(-80px);
+      opacity: 0.15;
+      filter: blur(2px);
+    }
+
+    #event-layer:has(.event-card:hover) .event-card.ancient:not(:hover) {
+      transform: scale(0.6) translateZ(-120px);
+      opacity: 0.15;
+      filter: blur(2px);
+    }
+
+    #event-layer .event-card:hover {
+      transform: scale(1.08) translateZ(60px);
+      opacity: 1 !important;
+      filter: blur(0);
+      z-index: 50;
+    }
+
+    #event-layer .event-card.aging:hover,
+    #event-layer .event-card.ancient:hover {
+      transform: scale(1.08) translateZ(60px);
+    }
+  }
+
+  /* Mobile: scrollable feed (no glass effects) */
+  @media (max-width: 600px) {
+    .idle-state {
+      display: none !important;
+    }
+
+    #event-layer {
+      position: static;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 16px;
+      padding-bottom: 40px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    #event-layer .event-card {
+      position: relative;
+      flex-shrink: 0;
+      width: 100%;
+    }
+  }
+
+  /* Drawer card styles */
+  .drawer-card {
+    margin-bottom: 16px;
+  }
+
+  .drawer-card:last-child {
+    margin-bottom: 0;
+  }
+</style>
 
 <script>
   import { fetchNegativeEvents, hasLiveGames } from '../lib/nhl.js';
   import { getSelectedRivals } from '../lib/store.js';
-  import { createGoalCard, createLossCard, createDayHeader } from '../lib/cards.js';
+  import { createGoalCardGlass, createLossCardGlass, createGoalCardFeed, createLossCardFeed, createDayHeader } from '../lib/cards.js';
+  import { triggerImpact, isMobile, createCrack } from '../lib/glassEffects.js';
+  import { getTeamColors } from '../lib/teamColors.js';
 
   // Polling intervals
-  const LIVE_INTERVAL = 20000;    // 20 seconds when live games
-  const IDLE_INTERVAL = 300000;   // 5 minutes otherwise
-  const DAYS_PER_LOAD = 3;        // Days to load per batch
-  const MAX_DAYS = 30;            // Maximum days to load (roughly a month)
+  const LIVE_INTERVAL = 20000;
+  const IDLE_INTERVAL = 300000;
+  const DAYS_TO_LOAD = 3;
 
-  const loading = document.getElementById('loading');
-  const empty = document.getElementById('empty');
-  const noEvents = document.getElementById('no-events');
-  const feed = document.getElementById('feed');
-  const refreshBtn = document.getElementById('refresh-btn');
-  const loadMoreContainer = document.getElementById('load-more-container');
-  const loadMoreBtn = document.getElementById('load-more-btn');
-  const loadingMore = document.getElementById('loading-more');
-  const endOfFeed = document.getElementById('end-of-feed');
+  const eventLayer = document.getElementById('event-layer');
+  const idleState = document.getElementById('idle-state');
+  const emptyState = document.getElementById('empty-state');
+  const liveBadge = document.getElementById('live-badge');
+  const drawerContent = document.getElementById('drawer-content');
 
-  let pollIntervalId = null;
-  let isLive = false;
-  let currentEventIds = new Set();
-  let isInitialLoad = true;
-  let daysLoaded = 0;
-  let allEvents = [];
-  let scheduleCache = new Map(); // Shared cache for streak calculations
+  // Check if we're on mobile at load time
+  const isMobileView = isMobile();
 
-  function formatDate(dateString) {
-    const date = new Date(dateString);
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const eventDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  let pollIntervalId: ReturnType<typeof setInterval> | null = null;
+  let currentEventIds = new Set<string>();
+  let placedEvents: Array<{ el: HTMLElement; origX: number; origY: number }> = [];
 
-    const diffDays = Math.floor((today.getTime() - eventDate.getTime()) / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return 'TODAY';
-    if (diffDays === 1) return 'YESTERDAY';
-
-    return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }).toUpperCase();
-  }
-
-  function groupEventsByDay(events) {
-    const groups = new Map();
-    for (const event of events) {
-      const dateKey = formatDate(event.timestamp);
-      if (!groups.has(dateKey)) {
-        groups.set(dateKey, []);
-      }
-      groups.get(dateKey).push(event);
+  /**
+   * Get position for a new card (desktop scattered layout)
+   */
+  function getImpactPosition(isLoss: boolean): { x: number; y: number } {
+    if (isMobile()) {
+      return { x: 0, y: 0 };
     }
-    return groups;
+
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const cardW = isLoss ? 380 : 300;
+    const cardH = isLoss ? 280 : 140;
+    const marginTop = 80;
+    const marginBottom = 40;
+    const marginSide = 40;
+
+    const minX = marginSide;
+    const maxX = vw - marginSide - cardW;
+    const minY = marginTop;
+    const maxY = vh - marginBottom - cardH;
+
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+    const spreadX = (maxX - minX) * 0.45;
+    const spreadY = (maxY - minY) * 0.45;
+
+    let bestX = centerX, bestY = centerY, bestDist = -1;
+
+    // Try several random positions, pick the one farthest from existing cards
+    for (let attempt = 0; attempt < 15; attempt++) {
+      const angle = Math.random() * Math.PI * 2;
+      const r = Math.random();
+      let x = centerX + Math.cos(angle) * spreadX * r;
+      let y = centerY + Math.sin(angle) * spreadY * r;
+
+      x = Math.max(minX, Math.min(maxX, x));
+      y = Math.max(minY, Math.min(maxY, y));
+
+      let minDist = Infinity;
+      for (const pe of placedEvents) {
+        const dx = x - pe.origX;
+        const dy = y - pe.origY;
+        minDist = Math.min(minDist, Math.sqrt(dx * dx + dy * dy));
+      }
+
+      if (minDist > bestDist) {
+        bestDist = minDist;
+        bestX = x;
+        bestY = y;
+      }
+    }
+
+    return { x: bestX, y: bestY };
   }
 
   /**
-   * Render feed with incremental updates
-   * - Initial load: render all without animation
-   * - Subsequent loads: keep existing cards, animate new ones
+   * Get aging position (drift outward from center)
    */
-  function renderFeed(events) {
-    const newEventIds = new Set(events.map(e => e.id));
-    const grouped = groupEventsByDay(events);
+  function getAgingPosition(origX: number, origY: number): { x: number; y: number } {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const centerX = vw / 2;
+    const centerY = vh / 2;
 
-    if (isInitialLoad) {
-      // First load: render everything without animation
-      let html = '';
-      for (const [dateStr, dayEvents] of grouped) {
-        html += createDayHeader(dateStr);
-        for (const event of dayEvents) {
-          html += event.type === 'loss'
-            ? createLossCard(event, false)
-            : createGoalCard(event, false);
-        }
-      }
-      feed.innerHTML = html;
-      currentEventIds = newEventIds;
-      isInitialLoad = false;
-      return;
-    }
+    const dx = origX - centerX;
+    const dy = origY - centerY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const pushDist = 40 + Math.random() * 30;
+    const nx = dist > 0 ? dx / dist : (Math.random() - 0.5);
+    const ny = dist > 0 ? dy / dist : (Math.random() - 0.5);
 
-    // Find new events (not in current feed)
-    const newEvents = events.filter(e => !currentEventIds.has(e.id));
-
-    if (newEvents.length === 0) {
-      // No new events, nothing to update
-      return;
-    }
-
-    // Rebuild entire feed, marking new cards for animation
-    let html = '';
-    for (const [dateStr, dayEvents] of grouped) {
-      html += createDayHeader(dateStr);
-      for (const event of dayEvents) {
-        const isNew = !currentEventIds.has(event.id);
-        html += event.type === 'loss'
-          ? createLossCard(event, isNew)
-          : createGoalCard(event, isNew);
-      }
-    }
-    feed.innerHTML = html;
-    currentEventIds = newEventIds;
+    return {
+      x: origX + nx * pushDist,
+      y: origY + ny * pushDist
+    };
   }
 
+  /**
+   * Fire a single event onto the glass (desktop) or feed (mobile)
+   */
+  function fireEvent(event: any, animate: boolean = true) {
+    const isLoss = event.type === 'loss';
+    const colors = getTeamColors(event.teamAbbreviation);
+
+    // Create card element
+    const card = document.createElement('div');
+    card.className = 'event-card';
+    card.dataset.team = event.teamAbbreviation;
+
+    // Mobile: use feed cards (left border style, no glitch)
+    // Desktop: use glass cards
+    if (isMobileView) {
+      card.innerHTML = isLoss
+        ? createLossCardFeed(event, animate)
+        : createGoalCardFeed(event, animate);
+      eventLayer?.prepend(card);
+    } else {
+      const pos = getImpactPosition(isLoss);
+      card.innerHTML = isLoss
+        ? createLossCardGlass(event, animate)
+        : createGoalCardGlass(event, animate);
+      card.style.left = pos.x + 'px';
+      card.style.top = pos.y + 'px';
+      eventLayer?.appendChild(card);
+
+      // Trigger impact effects (only if animating)
+      if (animate) {
+        const teamColorGlow = `${colors.primary}40`;
+        setTimeout(() => {
+          triggerImpact(card.querySelector('.loss-card-glass, .goal-card-glass') as HTMLElement, isLoss, teamColorGlow);
+        }, 50);
+      }
+
+      // Age older events (keep more cards visible)
+      placedEvents.forEach((pe, i) => {
+        const age = placedEvents.length - i;
+        if (age >= 6) {
+          pe.el.classList.add('ancient');
+          pe.el.classList.remove('aging');
+          const ancientPos = getAgingPosition(pe.origX, pe.origY);
+          pe.el.style.left = ancientPos.x + 'px';
+          pe.el.style.top = ancientPos.y + 'px';
+        } else if (age >= 4) {
+          pe.el.classList.add('aging');
+          const agingPos = getAgingPosition(pe.origX, pe.origY);
+          pe.el.style.left = agingPos.x + 'px';
+          pe.el.style.top = agingPos.y + 'px';
+        }
+      });
+
+      placedEvents.push({ el: card, origX: pos.x, origY: pos.y });
+    }
+  }
+
+  /**
+   * Populate the drawer with feed cards (desktop only)
+   */
+  function populateDrawer(events: any[]) {
+    if (!drawerContent || isMobileView) return;
+
+    drawerContent.innerHTML = '';
+
+    // Group events by date
+    let currentDate = '';
+    for (const event of events) {
+      const eventDate = new Date(event.timestamp).toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'short',
+        day: 'numeric'
+      });
+
+      if (eventDate !== currentDate) {
+        currentDate = eventDate;
+        const header = document.createElement('div');
+        header.innerHTML = createDayHeader(eventDate);
+        drawerContent.appendChild(header.firstElementChild!);
+      }
+
+      const card = document.createElement('div');
+      card.className = 'drawer-card';
+      card.innerHTML = event.type === 'loss'
+        ? createLossCardFeed(event, false)
+        : createGoalCardFeed(event, false);
+      drawerContent.appendChild(card);
+    }
+
+    // Add load more button
+    const loadMoreBtn = document.createElement('button');
+    loadMoreBtn.className = 'load-more-btn';
+    loadMoreBtn.innerHTML = `<span class="btn-text">Load More</span><span class="loading-dots"><span class="loading-dot"></span><span class="loading-dot"></span><span class="loading-dot"></span></span>`;
+    loadMoreBtn.addEventListener('click', async () => {
+      loadMoreBtn.classList.add('loading');
+      loadMoreBtn.querySelector('.btn-text').textContent = 'Loading';
+      loadMoreBtn.disabled = true;
+
+      loadedDays += 7; // Load another week
+      const rivals = getSelectedRivals();
+
+      try {
+        const events = await fetchNegativeEvents(rivals, loadedDays, 0, new Map());
+        populateDrawer(events);
+      } catch (error) {
+        console.error('Failed to load more events:', error);
+        loadMoreBtn.classList.remove('loading');
+        loadMoreBtn.querySelector('.btn-text').textContent = 'Load More';
+        loadMoreBtn.disabled = false;
+      }
+    });
+    drawerContent.appendChild(loadMoreBtn);
+  }
+
+  let loadedDays = DAYS_TO_LOAD;
+
+  /**
+   * Load and render feed
+   */
   async function loadFeed() {
     const rivals = getSelectedRivals();
 
-    // Only show loading spinner on initial load
-    if (isInitialLoad) {
-      loading.classList.remove('hidden');
-      empty.classList.add('hidden');
-      noEvents.classList.add('hidden');
-      feed.classList.add('hidden');
-      loadMoreContainer.classList.add('hidden');
-      endOfFeed.classList.add('hidden');
-    }
-
     if (rivals.size === 0) {
-      loading.classList.add('hidden');
-      empty.classList.remove('hidden');
-      noEvents.classList.add('hidden');
-      feed.classList.add('hidden');
-      loadMoreContainer.classList.add('hidden');
-      endOfFeed.classList.add('hidden');
-      currentEventIds = new Set();
-      allEvents = [];
-      daysLoaded = 0;
-      scheduleCache = new Map();
-      isInitialLoad = true;
+      idleState?.classList.add('hidden');
+      emptyState?.classList.remove('hidden');
       return;
     }
 
     try {
-      // Reset cache on fresh load to get updated schedule data
-      scheduleCache = new Map();
-      const events = await fetchNegativeEvents(rivals, DAYS_PER_LOAD, 0, scheduleCache);
-      daysLoaded = DAYS_PER_LOAD;
-      allEvents = events;
+      let events = await fetchNegativeEvents(rivals, DAYS_TO_LOAD, 0, new Map());
+      let startOffset = 0;
 
-      loading.classList.add('hidden');
-      empty.classList.add('hidden');
+      // If no events in initial window, find where the games are
+      // (handles off-season, Olympic breaks, etc.)
+      if (events.length === 0) {
+        const MAX_LOOKBACK = 60;
+        let searchOffset = DAYS_TO_LOAD;
+
+        while (events.length === 0 && searchOffset < MAX_LOOKBACK) {
+          // Check the next chunk for any events
+          const chunk = await fetchNegativeEvents(rivals, 7, searchOffset, new Map());
+          if (chunk.length > 0) {
+            // Found events - load DAYS_TO_LOAD days from this offset
+            startOffset = searchOffset;
+            events = await fetchNegativeEvents(rivals, DAYS_TO_LOAD, startOffset, new Map());
+            break;
+          }
+          searchOffset += 7;
+        }
+      }
+
+      // Update loadedDays to reflect where we're loading from
+      loadedDays = startOffset + DAYS_TO_LOAD;
 
       if (events.length === 0) {
-        noEvents.classList.remove('hidden');
-        feed.classList.add('hidden');
-        loadMoreContainer.classList.add('hidden');
-        endOfFeed.classList.add('hidden');
-        currentEventIds = new Set();
-        isInitialLoad = true;
+        // Truly no events found even after lookback
         return;
       }
 
-      noEvents.classList.add('hidden');
-      feed.classList.remove('hidden');
-      renderFeed(events);
+      // Hide idle state
+      idleState?.classList.add('hidden');
+      emptyState?.classList.add('hidden');
 
-      // Show "Load More" button if we haven't hit the max
-      if (daysLoaded < MAX_DAYS) {
-        loadMoreContainer.classList.remove('hidden');
-        endOfFeed.classList.add('hidden');
+      // Show live badge if games are live
+      const live = await hasLiveGames();
+      if (liveBadge) {
+        liveBadge.style.display = live ? 'flex' : 'none';
+      }
+
+      // Find new events
+      const newEvents = events.filter((e: any) => !currentEventIds.has(e.id));
+
+      // On initial load, render all without animation, newest first
+      if (currentEventIds.size === 0) {
+        // Reverse so oldest fires first (ends up at edges), newest last (center)
+        const reversed = [...events].reverse();
+        for (const event of reversed) {
+          fireEvent(event, false);
+          currentEventIds.add(event.id);
+        }
+
+        // Populate drawer with legacy cards (desktop only)
+        populateDrawer(events);
+
+        // Add ghost cracks for the most recent 2-3 cards (desktop only)
+        if (!isMobileView && placedEvents.length > 0) {
+          const recentCount = Math.min(3, placedEvents.length);
+          const recentEvents = placedEvents.slice(-recentCount);
+
+          recentEvents.forEach((pe, i) => {
+            const rect = pe.el.getBoundingClientRect();
+            const crackX = rect.left + rect.width / 2;
+            const crackY = rect.top + rect.height / 2;
+            // Determine if it's a loss card (heavier crack)
+            const isLoss = pe.el.querySelector('.loss-card-glass') !== null;
+
+            // Stagger the crack creation slightly
+            setTimeout(() => {
+              createCrack(crackX, crackY, isLoss);
+              // Immediately transition to ghost state
+              setTimeout(() => {
+                const cracks = document.querySelectorAll('.crack-effect:not(.ghost)');
+                cracks.forEach(c => {
+                  c.classList.remove('active');
+                  c.classList.add('ghost');
+                });
+              }, 100);
+            }, i * 50);
+          });
+        }
       } else {
-        loadMoreContainer.classList.add('hidden');
-        endOfFeed.classList.remove('hidden');
+        // Incremental update: animate new events
+        for (const event of newEvents) {
+          fireEvent(event, true);
+          currentEventIds.add(event.id);
+        }
+        // Update drawer with new events
+        populateDrawer(events);
       }
     } catch (error) {
       console.error('Failed to load feed:', error);
-      // On error during refresh, keep existing content visible
-      if (isInitialLoad) {
-        loading.classList.add('hidden');
-        noEvents.classList.remove('hidden');
-      }
-    }
-  }
-
-  async function loadMore() {
-    const rivals = getSelectedRivals();
-    if (rivals.size === 0 || daysLoaded >= MAX_DAYS) return;
-
-    loadMoreContainer.classList.add('hidden');
-    loadingMore.classList.remove('hidden');
-
-    try {
-      const newEvents = await fetchNegativeEvents(rivals, DAYS_PER_LOAD, daysLoaded, scheduleCache);
-      daysLoaded += DAYS_PER_LOAD;
-
-      loadingMore.classList.add('hidden');
-
-      if (newEvents.length === 0) {
-        // No more events found
-        endOfFeed.classList.remove('hidden');
-        return;
-      }
-
-      // Append new events (filter out any duplicates just in case)
-      const existingIds = new Set(allEvents.map(e => e.id));
-      const uniqueNewEvents = newEvents.filter(e => !existingIds.has(e.id));
-      allEvents = [...allEvents, ...uniqueNewEvents];
-
-      // Re-render with all events (new ones will animate)
-      renderFeed(allEvents);
-
-      // Show appropriate button
-      if (daysLoaded < MAX_DAYS) {
-        loadMoreContainer.classList.remove('hidden');
-      } else {
-        endOfFeed.classList.remove('hidden');
-      }
-    } catch (error) {
-      console.error('Failed to load more:', error);
-      loadingMore.classList.add('hidden');
-      loadMoreContainer.classList.remove('hidden');
     }
   }
 
   // Polling management
   async function updatePolling() {
-    isLive = await hasLiveGames();
+    const isLive = await hasLiveGames();
     const interval = (document.hidden || !isLive) ? IDLE_INTERVAL : LIVE_INTERVAL;
 
     if (pollIntervalId) clearInterval(pollIntervalId);
@@ -301,12 +498,61 @@ import Layout from '../layouts/Layout.astro';
     updatePolling();
   });
 
+  /**
+   * Add load more button for mobile
+   */
+  function addMobileLoadMore() {
+    if (!isMobileView || !eventLayer) return;
+
+    // Remove existing button if any
+    const existingBtn = eventLayer.querySelector('.load-more-btn');
+    if (existingBtn) existingBtn.remove();
+
+    const loadMoreBtn = document.createElement('button');
+    loadMoreBtn.className = 'load-more-btn';
+    loadMoreBtn.innerHTML = `<span class="btn-text">Load More</span><span class="loading-dots"><span class="loading-dot"></span><span class="loading-dot"></span><span class="loading-dot"></span></span>`;
+    loadMoreBtn.addEventListener('click', async () => {
+      loadMoreBtn.classList.add('loading');
+      loadMoreBtn.querySelector('.btn-text')!.textContent = 'Loading';
+      loadMoreBtn.disabled = true;
+
+      loadedDays += 7;
+      const rivals = getSelectedRivals();
+
+      try {
+        const events = await fetchNegativeEvents(rivals, loadedDays, 0, new Map());
+
+        // Add new (older) events at the bottom, before the button
+        const newEvents = events.filter((e: any) => !currentEventIds.has(e.id));
+        for (const event of newEvents) {
+          const isLoss = event.type === 'loss';
+          const card = document.createElement('div');
+          card.className = 'event-card';
+          card.dataset.team = event.teamAbbreviation;
+          card.innerHTML = isLoss
+            ? createLossCardFeed(event, false)
+            : createGoalCardFeed(event, false);
+          // Insert before button (at bottom of feed)
+          eventLayer.insertBefore(card, loadMoreBtn);
+          currentEventIds.add(event.id);
+        }
+
+        loadMoreBtn.classList.remove('loading');
+        loadMoreBtn.querySelector('.btn-text')!.textContent = 'Load More';
+        loadMoreBtn.disabled = false;
+      } catch (error) {
+        console.error('Failed to load more:', error);
+        loadMoreBtn.classList.remove('loading');
+        loadMoreBtn.querySelector('.btn-text')!.textContent = 'Load More';
+        loadMoreBtn.disabled = false;
+      }
+    });
+    eventLayer.appendChild(loadMoreBtn);
+  }
+
   // Initial load
-  loadFeed().then(updatePolling);
-
-  // Refresh button
-  refreshBtn?.addEventListener('click', loadFeed);
-
-  // Load more button
-  loadMoreBtn?.addEventListener('click', loadMore);
+  loadFeed().then(() => {
+    updatePolling();
+    addMobileLoadMore();
+  });
 </script>

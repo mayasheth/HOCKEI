@@ -2,84 +2,450 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<style is:global>
-  /* Toggle arrow hover and rotation */
-  .toggle-arrow,
-  .toggle-arrow-more {
-    transition: transform 0.25s ease;
-  }
-  .evidence-toggle:hover .toggle-arrow,
-  .see-more-toggle:hover .toggle-arrow-more {
-    transform: scale(1.05);
-  }
-  .toggle-arrow.open,
-  .toggle-arrow-more.open {
-    transform: rotate(180deg);
-  }
-  .evidence-toggle:hover .toggle-arrow.open,
-  .see-more-toggle:hover .toggle-arrow-more.open {
-    transform: rotate(180deg) scale(1.05);
-  }
-
-  /* Evidence panel slide animation */
-  .evidence-panel,
-  .see-more-panel {
-    display: grid;
-    grid-template-rows: 0fr;
-    transition: grid-template-rows 0.3s ease;
-  }
-  .evidence-panel.open,
-  .see-more-panel.open {
-    grid-template-rows: 1fr;
-  }
-  .evidence-panel > div,
-  .see-more-panel > div {
-    overflow: hidden;
-  }
-</style>
-
 <Layout title="HOCKEI - Rival Stats" activePage="stats">
-  <div class="max-w-2xl mx-auto px-4 py-6">
+  <div class="stats-page">
     <!-- Header -->
-    <div class="mb-6">
-      <h1 class="text-2xl font-bold" style="color: var(--text-primary);">Unbiased Statistics</h1>
-      <p class="text-sm mt-1" style="color: var(--text-secondary);">
-        Numbers exposing the true nature of your rivals 
-      </p>
+    <div class="stats-header">
+      <h1 class="stats-title">UNBIASED STATISTICS</h1>
+      <p class="stats-subtitle">Objective analysis of rival performance patterns</p>
     </div>
 
     <!-- Loading State -->
-    <div id="loading" class="flex flex-col items-center justify-center py-20">
-      <div class="spinner w-8 h-8 border-2 border-white/20 border-t-white/80 rounded-full mb-4"></div>
-      <p style="color: var(--text-secondary);">Computing stats...</p>
+    <div id="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Computing stats...</p>
     </div>
 
     <!-- No Rivals Selected -->
-    <div id="no-rivals" class="hidden py-20 text-center">
-      <p class="text-lg mb-4" style="color: var(--text-muted);">No rivals selected</p>
-      <a href="/rivals" class="btn px-6 py-2 rounded-lg inline-block" style="background-color: var(--accent-red); color: white;">
-        Select Rivals
-      </a>
+    <div id="no-rivals" class="empty-state hidden">
+      <p class="empty-text">No rivals selected</p>
+      <a href="/rivals" class="empty-link">Select Rivals</a>
     </div>
 
     <!-- Playing Today Section -->
-    <div id="playing-today" class="hidden mb-8">
-      <h2 class="text-sm uppercase tracking-wider mb-4 flex items-center gap-2" style="color: var(--text-muted);">
-        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-        Playing today
-      </h2>
-      <div id="playing-today-list" class="space-y-4"></div>
+    <div id="playing-today" class="stats-section hidden">
+      <div class="section-header live">
+        <span class="section-label">Playing Today</span>
+      </div>
+      <div id="playing-today-list" class="section-list"></div>
     </div>
 
     <!-- Not Playing Today Section -->
-    <div id="not-playing" class="hidden">
-      <h2 class="text-sm uppercase tracking-wider mb-4" style="color: var(--text-muted);">
-        All the rest
-      </h2>
-      <div id="not-playing-list" class="space-y-4"></div>
+    <div id="not-playing" class="stats-section hidden">
+      <div class="section-header">
+        <span class="section-label">All the rest</span>
+      </div>
+      <div id="not-playing-list" class="section-list"></div>
     </div>
   </div>
 </Layout>
+
+<style>
+  .stats-page {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 0 20px 80px;
+  }
+
+  /* Header */
+  .stats-header {
+    padding: 20px 0 24px;
+  }
+
+  .stats-title {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    letter-spacing: 0.1em;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .stats-subtitle {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    letter-spacing: 0.05em;
+  }
+
+  /* Loading State */
+  .loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    color: var(--text-tertiary);
+  }
+
+  .loading-state p {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+  }
+
+  .spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--border-visible);
+    border-top-color: var(--text-secondary);
+    border-radius: 50%;
+    margin-bottom: 16px;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .loading-state.hidden {
+    display: none;
+  }
+
+  /* Empty State */
+  .empty-state {
+    padding: 80px 20px;
+    text-align: center;
+  }
+
+  .empty-state.hidden {
+    display: none;
+  }
+
+  .empty-text {
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
+    margin-bottom: 16px;
+  }
+
+  .empty-link {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid var(--border-visible);
+    border-radius: 4px;
+    color: var(--text-tertiary);
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: all 0.2s ease;
+    display: inline-block;
+  }
+
+  .empty-link:hover {
+    border-color: var(--text-tertiary);
+    color: var(--text-secondary);
+  }
+
+  /* Section */
+  .stats-section {
+    margin-bottom: 24px;
+  }
+
+  .stats-section.hidden {
+    display: none;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: 12px;
+  }
+
+  .section-header::before {
+    content: '';
+    width: 2px;
+    height: 12px;
+    background: var(--text-tertiary);
+    border-radius: 1px;
+  }
+
+  .section-header.live::before {
+    background: #22c55e;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+  }
+
+  .section-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+</style>
+
+<style is:global>
+  /* Dossier Card */
+  .dossier-card {
+    background: var(--bg-arena);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .dossier-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .dossier-logo {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+  }
+
+  .dossier-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .dossier-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .dossier-name {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+  }
+
+  .dossier-context {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .dossier-badge {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    background: rgba(229, 57, 53, 0.15);
+    color: var(--accent-red);
+    border-radius: 2px;
+    letter-spacing: 0.05em;
+  }
+
+  .dossier-stats {
+    padding: 8px 12px;
+  }
+
+  .dossier-stat-group {
+    margin-bottom: 8px;
+  }
+
+  .dossier-stat-group:last-child {
+    margin-bottom: 0;
+  }
+
+  .dossier-stat-label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--accent-red);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  /* Stat Row */
+  .stat-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: var(--bg-surface);
+    border-radius: 3px;
+    margin-bottom: 4px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  .stat-row:hover {
+    background: var(--bg-elevated);
+  }
+
+  .stat-row:last-child {
+    margin-bottom: 0;
+  }
+
+  .stat-text {
+    flex: 1;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+  }
+
+  .stat-severity {
+    display: flex;
+    gap: 2px;
+  }
+
+  .severity-pip {
+    width: 4px;
+    height: 12px;
+    background: var(--border-visible);
+    border-radius: 1px;
+  }
+
+  .severity-pip.active {
+    background: var(--accent-red);
+  }
+
+  .stat-expand {
+    width: 16px;
+    height: 16px;
+    color: var(--text-tertiary);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .stat-row.expanded .stat-expand {
+    transform: rotate(180deg);
+  }
+
+  /* Evidence Panel */
+  .stat-evidence {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.25s ease;
+  }
+
+  .stat-evidence.open {
+    grid-template-rows: 1fr;
+  }
+
+  .stat-evidence-inner {
+    overflow: hidden;
+  }
+
+  .stat-evidence-content {
+    padding: 8px 10px;
+    margin: 0 0 4px 0;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+    border-left: 2px solid var(--border-visible);
+    max-height: 160px;
+    overflow-y: auto;
+  }
+
+  .evidence-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+  }
+
+  .evidence-date {
+    color: var(--text-tertiary);
+  }
+
+  .evidence-result {
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .evidence-score {
+    font-weight: 600;
+  }
+
+  .evidence-score.loss {
+    color: var(--accent-red);
+  }
+
+  .evidence-score.opp {
+    color: var(--text-primary);
+  }
+
+  .evidence-label {
+    color: var(--text-tertiary);
+    margin-left: 2px;
+  }
+
+  .evidence-label.loss {
+    color: var(--accent-red);
+  }
+
+  /* Dossier Toggle */
+  .dossier-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 12px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    border-top: 1px solid var(--border-subtle);
+    transition: color 0.15s ease;
+  }
+
+  .dossier-toggle:hover {
+    color: var(--text-secondary);
+  }
+
+  .dossier-toggle svg {
+    width: 10px;
+    height: 10px;
+    transition: transform 0.2s ease;
+  }
+
+  .dossier-toggle.open svg {
+    transform: rotate(180deg);
+  }
+
+  .dossier-more {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.25s ease;
+  }
+
+  .dossier-more.open {
+    grid-template-rows: 1fr;
+  }
+
+  .dossier-more-inner {
+    overflow: hidden;
+  }
+
+  .dossier-more-content {
+    padding: 0 12px 12px;
+  }
+
+  /* No stats message */
+  .no-stats-msg {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    padding: 8px 12px;
+  }
+</style>
 
 <script>
   import { getSelectedRivals } from '../lib/store.js';
@@ -109,8 +475,8 @@ import Layout from '../layouts/Layout.astro';
       const teamMap = new Map(allTeams.map(t => [t.abbreviation, t.name]));
 
       // Compute curses for each rival
-      const playingToday = [];
-      const notPlaying = [];
+      const playingToday: Array<{ abbrev: string; teamName: string; cursesData: any }> = [];
+      const notPlaying: Array<{ abbrev: string; teamName: string; cursesData: any }> = [];
 
       const promises = Array.from(rivals).map(async (abbrev) => {
         const cursesData = await computeCursesWithContext(abbrev);
@@ -141,6 +507,11 @@ import Layout from '../layouts/Layout.astro';
       // Render not playing
       if (notPlaying.length > 0) {
         notPlayingSection?.classList.remove('hidden');
+        // Hide the section header if no one is playing today (just show cards directly)
+        if (playingToday.length === 0) {
+          const header = notPlayingSection?.querySelector('.section-header');
+          if (header) header.style.display = 'none';
+        }
         notPlayingList!.innerHTML = notPlaying
           .map(({ abbrev, teamName, cursesData }) => createTeamStatsCard(abbrev, teamName, cursesData))
           .join('');
@@ -153,37 +524,33 @@ import Layout from '../layouts/Layout.astro';
       console.error('Failed to load stats:', e);
       loading?.classList.add('hidden');
       noRivals!.innerHTML = `
-        <p class="text-lg mb-4" style="color: var(--accent-red);">Failed to load stats</p>
-        <button onclick="location.reload()" class="btn px-6 py-2 rounded-lg" style="background-color: var(--accent-red); color: white;">
-          Retry
-        </button>
+        <p class="empty-text" style="color: var(--accent-red);">Failed to load stats</p>
+        <button onclick="location.reload()" class="empty-link">Retry</button>
       `;
       noRivals?.classList.remove('hidden');
     }
   }
 
   function setupToggleHandlers() {
-    // Evidence toggles
-    document.querySelectorAll('.evidence-toggle').forEach(el => {
+    // Stat row evidence toggles
+    document.querySelectorAll('.stat-row[data-target]').forEach(el => {
       el.addEventListener('click', () => {
         const targetId = el.getAttribute('data-target');
         const panel = document.getElementById(targetId!);
-        const arrow = el.querySelector('.toggle-arrow');
 
+        el.classList.toggle('expanded');
         panel?.classList.toggle('open');
-        arrow?.classList.toggle('open');
       });
     });
 
-    // See more toggles
-    document.querySelectorAll('.see-more-toggle').forEach(el => {
+    // Dossier "see more" toggles
+    document.querySelectorAll('.dossier-toggle').forEach(el => {
       el.addEventListener('click', () => {
         const targetId = el.getAttribute('data-target');
         const panel = document.getElementById(targetId!);
-        const arrow = el.querySelector('.toggle-arrow-more');
 
+        el.classList.toggle('open');
         panel?.classList.toggle('open');
-        arrow?.classList.toggle('open');
       });
     });
   }
