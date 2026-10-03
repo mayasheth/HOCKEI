@@ -1,15 +1,22 @@
 # HOCKEI - Feature Backlog
 
-## Current Tasks
-- [ ] Update idle/empty state styling to match glass theme
-- [ ] Progressive loading indicator during Olympic break lookback
+## Current Tasks (late edition port, branch `feature/late-edition`)
+- [x] Data layer: /api/recent, /api/live, /api/next, /api/tracks; fact engine with curses folded in (Oct 3 2026)
+- [x] Feed UI: live scoreboard + time-ordered goal feed, recent games (6 + load more), Next aside, rivals page (Oct 3 2026)
+- [x] Removed glass UI, stats page, curses, cards (Oct 3 2026)
+- [ ] Watch a real live night (polling, sprite delays, overturned goals, OT/SO, two rivals playing each other)
+- [ ] Check on a real phone (headless Chrome can't go below 500 px)
+- [ ] Cold-start speed of /api/recent on Vercel (first load fetches many play-by-plays); move to a nightly snapshot (option B) if slow
+- [ ] Shootout goals are skipped; decide how a shootout loss should read
+- [ ] Remove Tailwind from config and dependencies, and unused public/logos
+- [ ] Favorites ("your team") in ranking (deferred)
 
 ---
 
 ## Priority Features
 
 ### Cards & Feed
-- [ ] **Short-Handed Goal Formatting** - Extra emphasis for SHG against rivals (extra embarrassing)
+- [x] **Short-Handed Goal Formatting** - SHG gets severity 60 and red pen marks (Oct 2026)
 - [ ] **Goal Video Link** - Add button linking to goal replay (link from NHL API)
 
 ### Stats Page Enhancements

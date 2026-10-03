@@ -128,7 +128,7 @@ export async function live(rivals, date) {
     for (const t of [g.homeTeam.abbrev, g.awayTeam.abbrev]) {
       if (!rivals.includes(t)) continue;
       if (g.gameState === "FUT" || g.gameState === "PRE") {
-        out.push({ key: `${t}-${g.id}`, id: g.id, rival: t, opp: t === g.homeTeam.abbrev ? g.awayTeam.abbrev : g.homeTeam.abbrev, state: g.gameState, startUTC: g.startTimeUTC, rs: 0, os: 0, goals: [], ours: [] });
+        out.push({ key: `${t}-${g.id}`, id: g.id, rival: t, home: t === g.homeTeam.abbrev, opp: t === g.homeTeam.abbrev ? g.awayTeam.abbrev : g.homeTeam.abbrev, state: g.gameState, startUTC: g.startTimeUTC, rs: 0, os: 0, goals: [], ours: [] });
         continue;
       }
       const d = await detail(g.id, t);
