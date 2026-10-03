@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Glass Card Hover Effects</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-arena: #060810;
+      --bg-surface: #0b0e18;
+      --bg-elevated: #121622;
+      --text-primary: #e8ecf4;
+      --text-secondary: #8d95a8;
+      --text-tertiary: #525a6b;
+      --border-subtle: rgba(232, 236, 244, 0.06);
+      --accent-red: #E53935;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg-arena);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      letter-spacing: 0.1em;
+      text-align: center;
+      padding: 30px 20px 10px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--text-tertiary);
+      font-size: 0.85rem;
+      margin-bottom: 30px;
+    }
+
+    .demos-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: calc(100vh - 120px);
+    }
+
+    .demo-section {
+      position: relative;
+      padding: 20px;
+      border-right: 1px solid var(--border-subtle);
+    }
+
+    .demo-section:last-child {
+      border-right: none;
+    }
+
+    .demo-label {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      color: var(--text-secondary);
+      background: var(--bg-elevated);
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+      z-index: 100;
+      text-transform: uppercase;
+    }
+
+    /* Glass arena simulation */
+    .glass-arena {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 500px;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at 50% 120%, rgba(100, 120, 150, 0.08) 0%, transparent 60%),
+        var(--bg-arena);
+    }
+
+    /* Base card styles */
+    .glass-card {
+      position: absolute;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 14px 16px;
+      cursor: pointer;
+      width: 220px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .card-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--bg-elevated);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.6rem;
+      font-weight: 700;
+      color: var(--text-tertiary);
+    }
+
+    .card-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+    }
+
+    .card-team {
+      color: var(--accent-red);
+    }
+
+    .card-type {
+      color: var(--text-secondary);
+    }
+
+    .card-body {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .card-meta {
+      font-size: 0.7rem;
+      color: var(--text-tertiary);
+      margin-top: 4px;
+    }
+
+    /* Aging states */
+    .glass-card.aging {
+      opacity: 0.5;
+      transform: scale(0.85);
+    }
+
+    .glass-card.ancient {
+      opacity: 0.25;
+      transform: scale(0.7);
+    }
+
+    /* ==========================================
+       OPTION 1: LIFT & FOCUS
+       ========================================== */
+    .demo-lift .glass-card {
+      transition:
+        transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+        opacity 0.3s ease,
+        box-shadow 0.3s ease,
+        z-index 0s;
+      z-index: 1;
+    }
+
+    .demo-lift .glass-card.aging,
+    .demo-lift .glass-card.ancient {
+      transition:
+        transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+        opacity 0.3s ease,
+        box-shadow 0.3s ease;
+    }
+
+    /* When ANY card is hovered, fade others */
+    .demo-lift:has(.glass-card:hover) .glass-card:not(:hover) {
+      opacity: 0.25;
+    }
+
+    /* The hovered card */
+    .demo-lift .glass-card:hover {
+      transform: scale(1.15);
+      opacity: 1 !important;
+      z-index: 50;
+      box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(232, 236, 244, 0.1),
+        0 0 30px rgba(229, 57, 53, 0.15);
+    }
+
+    .demo-lift .glass-card.aging:hover,
+    .demo-lift .glass-card.ancient:hover {
+      transform: scale(1.15);
+    }
+
+    /* ==========================================
+       OPTION 5: DEPTH SHIFT
+       ========================================== */
+    .demo-depth {
+      perspective: 1000px;
+      transform-style: preserve-3d;
+    }
+
+    .demo-depth .glass-card {
+      transition:
+        transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+        opacity 0.4s ease,
+        filter 0.4s ease;
+      transform-style: preserve-3d;
+      z-index: 1;
+    }
+
+    /* When ANY card is hovered */
+    .demo-depth:has(.glass-card:hover) .glass-card:not(:hover) {
+      transform: scale(0.9) translateZ(-50px);
+      opacity: 0.35;
+      filter: blur(1px);
+    }
+
+    .demo-depth:has(.glass-card:hover) .glass-card.aging:not(:hover) {
+      transform: scale(0.75) translateZ(-80px);
+      opacity: 0.2;
+      filter: blur(2px);
+    }
+
+    .demo-depth:has(.glass-card:hover) .glass-card.ancient:not(:hover) {
+      transform: scale(0.6) translateZ(-120px);
+      opacity: 0.1;
+      filter: blur(3px);
+    }
+
+    /* The hovered card */
+    .demo-depth .glass-card:hover {
+      transform: scale(1.08) translateZ(60px);
+      opacity: 1 !important;
+      filter: blur(0);
+      z-index: 50;
+      box-shadow:
+        0 25px 50px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(232, 236, 244, 0.12);
+    }
+
+    .demo-depth .glass-card.aging:hover,
+    .demo-depth .glass-card.ancient:hover {
+      transform: scale(1.08) translateZ(60px);
+    }
+
+    /* Card positions */
+    .card-1 { top: 80px; left: 30px; }
+    .card-2 { top: 120px; left: 180px; }
+    .card-3 { top: 220px; left: 80px; }
+    .card-4 { top: 280px; left: 220px; }
+    .card-5 { top: 380px; left: 50px; }
+
+    /* Instructions */
+    .instructions {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-tertiary);
+      background: var(--bg-elevated);
+      padding: 10px 20px;
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+  <h1>GLASS CARD HOVER EFFECTS</h1>
+  <p class="subtitle">Hover over the cards to compare the two effects</p>
+
+  <div class="demos-container">
+    <!-- Option 1: Lift & Focus -->
+    <div class="demo-section">
+      <div class="demo-label">1. Lift & Focus</div>
+      <div class="glass-arena demo-lift">
+        <div class="glass-card card-1">
+          <div class="card-header">
+            <div class="card-logo">TOR</div>
+            <div class="card-title">
+              <span class="card-team">TOR</span>
+              <span class="card-type"> · GOAL AGAINST</span>
+            </div>
+          </div>
+          <div class="card-body">Auston Matthews</div>
+          <div class="card-meta">2nd 14:32 · wrist shot</div>
+        </div>
+
+        <div class="glass-card card-2 aging">
+          <div class="card-header">
+            <div class="card-logo">BOS</div>
+            <div class="card-title">
+              <span class="card-team">BOS</span>
+              <span class="card-type"> · DEFEATED</span>
+            </div>
+          </div>
+          <div class="card-body">3 – 5</div>
+          <div class="card-meta">Final</div>
+        </div>
+
+        <div class="glass-card card-3">
+          <div class="card-header">
+            <div class="card-logo">NYR</div>
+            <div class="card-title">
+              <span class="card-team">NYR</span>
+              <span class="card-type"> · GOAL AGAINST</span>
+            </div>
+          </div>
+          <div class="card-body">Connor McDavid</div>
+          <div class="card-meta">3rd 08:15 · slap shot</div>
+        </div>
+
+        <div class="glass-card card-4 ancient">
+          <div class="card-header">
+            <div class="card-logo">MTL</div>
+            <div class="card-title">
+              <span class="card-team">MTL</span>
+              <span class="card-type"> · GOAL AGAINST</span>
+            </div>
+          </div>
+          <div class="card-body">Sidney Crosby</div>
+          <div class="card-meta">1st 02:44</div>
+        </div>
+
+        <div class="glass-card card-5 aging">
+          <div class="card-header">
+            <div class="card-logo">TOR</div>
+            <div class="card-title">
+              <span class="card-team">TOR</span>
+              <span class="card-type"> · DEFEATED</span>
+            </div>
+          </div>
+          <div class="card-body">2 – 4</div>
+          <div class="card-meta">Final</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Option 5: Depth Shift -->
+    <div class="demo-section">
+      <div class="demo-label">5. Depth Shift</div>
+      <div class="glass-arena demo-depth">
+        <div class="glass-card card-1">
+          <div class="card-header">
+            <div class="card-logo">TOR</div>
+            <div class="card-title">
+              <span class="card-team">TOR</span>
+              <span class="card-type"> · GOAL AGAINST</span>
+            </div>
+          </div>
+          <div class="card-body">Auston Matthews</div>
+          <div class="card-meta">2nd 14:32 · wrist shot</div>
+        </div>
+
+        <div class="glass-card card-2 aging">
+          <div class="card-header">
+            <div class="card-logo">BOS</div>
+            <div class="card-title">
+              <span class="card-team">BOS</span>
+              <span class="card-type"> · DEFEATED</span>
+            </div>
+          </div>
+          <div class="card-body">3 – 5</div>
+          <div class="card-meta">Final</div>
+        </div>
+
+        <div class="glass-card card-3">
+          <div class="card-header">
+            <div class="card-logo">NYR</div>
+            <div class="card-title">
+              <span class="card-team">NYR</span>
+              <span class="card-type"> · GOAL AGAINST</span>
+            </div>
+          </div>
+          <div class="card-body">Connor McDavid</div>
+          <div class="card-meta">3rd 08:15 · slap shot</div>
+        </div>
+
+        <div class="glass-card card-4 ancient">
+          <div class="card-header">
+            <div class="card-logo">MTL</div>
+            <div class="card-title">
+              <span class="card-team">MTL</span>
+              <span class="card-type"> · GOAL AGAINST</span>
+            </div>
+          </div>
+          <div class="card-body">Sidney Crosby</div>
+          <div class="card-meta">1st 02:44</div>
+        </div>
+
+        <div class="glass-card card-5 aging">
+          <div class="card-header">
+            <div class="card-logo">TOR</div>
+            <div class="card-title">
+              <span class="card-team">TOR</span>
+              <span class="card-type"> · DEFEATED</span>
+            </div>
+          </div>
+          <div class="card-body">2 – 4</div>
+          <div class="card-meta">Final</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="instructions">
+    Hover over cards to see the effect · Cards have different "age" states (fresh, aging, ancient)
+  </div>
+</body>
+</html>

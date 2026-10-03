@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rivals Selection - Design Comparison</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-arena: #060810;
+      --bg-surface: #0b0e18;
+      --bg-elevated: #121622;
+      --bg-spotlight: #1a1e2a;
+      --text-primary: #e8ecf4;
+      --text-secondary: #8d95a8;
+      --text-tertiary: #525a6b;
+      --border-subtle: rgba(232, 236, 244, 0.06);
+      --border-visible: rgba(232, 236, 244, 0.12);
+      --accent-red: #E53935;
+      --font-display: 'Bebas Neue', sans-serif;
+      --font-sans: 'DM Sans', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: #000;
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    /* Demo Layout */
+    .demo-header {
+      text-align: center;
+      padding: 30px 20px 20px;
+      background: var(--bg-arena);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .demo-header h1 {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+    }
+
+    .demo-header p {
+      color: var(--text-tertiary);
+      font-size: 0.85rem;
+    }
+
+    .demo-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: calc(100vh - 100px);
+    }
+
+    @media (max-width: 900px) {
+      .demo-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .demo-panel {
+      position: relative;
+      border-right: 1px solid var(--border-subtle);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .demo-panel:last-child {
+      border-right: none;
+    }
+
+    .demo-label {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 16px 20px;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .demo-label-text {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+    }
+
+    .demo-label-tag {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      padding: 4px 8px;
+      background: var(--accent-red);
+      color: white;
+      border-radius: 4px;
+    }
+
+    /* Sample team data */
+    .team-logo {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    /* Fake logo placeholder */
+    .logo-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-spotlight);
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-tertiary);
+    }
+
+    /* ==========================================
+       OPTION 2: CONFERENCE CARDS
+       ========================================== */
+    .option2-container {
+      flex: 1;
+      background: var(--bg-arena);
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    /* Conference Tabs */
+    .conference-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 24px;
+      background: var(--bg-surface);
+      padding: 4px;
+      border-radius: 10px;
+    }
+
+    .conference-tab {
+      flex: 1;
+      padding: 12px 16px;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .conference-tab.active {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+    }
+
+    .conference-tab:hover:not(.active) {
+      color: var(--text-secondary);
+    }
+
+    /* Division Grid */
+    .divisions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 500px) {
+      .divisions-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .division-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .division-header {
+      padding: 12px 16px;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border-subtle);
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+    }
+
+    .division-teams {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2px;
+      padding: 8px;
+    }
+
+    .team-tile {
+      aspect-ratio: 1;
+      padding: 8px;
+      background: var(--bg-arena);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+    }
+
+    .team-tile:hover {
+      background: var(--bg-elevated);
+      transform: scale(1.05);
+    }
+
+    .team-tile.selected {
+      background: rgba(229, 57, 53, 0.15);
+      box-shadow:
+        0 0 0 2px var(--accent-red),
+        0 0 20px rgba(229, 57, 53, 0.3);
+      transform: scale(1.05);
+    }
+
+    .team-tile.selected::after {
+      content: '';
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 8px;
+      height: 8px;
+      background: var(--accent-red);
+      border-radius: 50%;
+    }
+
+    /* Selection Counter */
+    .selection-counter {
+      position: sticky;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 16px 20px;
+      background: linear-gradient(to top, var(--bg-arena) 80%, transparent);
+      display: flex;
+      justify-content: center;
+    }
+
+    .counter-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-visible);
+      border-radius: 30px;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .counter-pill .count {
+      color: var(--accent-red);
+    }
+
+    /* ==========================================
+       OPTION 3: HATE STACK
+       ========================================== */
+    .option3-container {
+      flex: 1;
+      background: var(--bg-arena);
+      overflow-y: auto;
+    }
+
+    .stack-header {
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .stack-title {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      letter-spacing: 0.08em;
+    }
+
+    .stack-clear {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      padding: 6px 12px;
+      background: transparent;
+      border: 1px solid var(--border-visible);
+      border-radius: 6px;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .stack-clear:hover {
+      border-color: var(--text-tertiary);
+      color: var(--text-secondary);
+    }
+
+    /* Division sections */
+    .division-section {
+      margin-bottom: 8px;
+    }
+
+    .division-sticky-header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding: 10px 20px;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-subtle);
+      border-bottom: 1px solid var(--border-subtle);
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .division-sticky-header::before {
+      content: '';
+      width: 3px;
+      height: 12px;
+      background: var(--accent-red);
+      border-radius: 2px;
+    }
+
+    .team-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 20px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .team-row:hover {
+      background: var(--bg-surface);
+    }
+
+    .team-row.selected {
+      background: rgba(229, 57, 53, 0.08);
+      border-left: 3px solid var(--accent-red);
+      padding-left: 17px;
+    }
+
+    .team-row-logo {
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+    }
+
+    .team-row.selected .team-row-logo {
+      filter: drop-shadow(0 0 8px rgba(229, 57, 53, 0.4));
+    }
+
+    .team-row-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .team-row-name {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+
+    .team-row-abbrev {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-tertiary);
+      letter-spacing: 0.05em;
+    }
+
+    .team-row-check {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid var(--border-visible);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .team-row.selected .team-row-check {
+      background: var(--accent-red);
+      border-color: var(--accent-red);
+    }
+
+    .team-row-check svg {
+      width: 12px;
+      height: 12px;
+      opacity: 0;
+      transform: scale(0.5);
+      transition: all 0.2s ease;
+    }
+
+    .team-row.selected .team-row-check svg {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* Floating counter for option 3 */
+    .floating-counter {
+      position: sticky;
+      bottom: 20px;
+      display: flex;
+      justify-content: center;
+      padding: 0 20px;
+      pointer-events: none;
+    }
+
+    .floating-pill {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 24px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-visible);
+      border-radius: 30px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      pointer-events: auto;
+    }
+
+    .floating-pill-count {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .floating-pill-count span {
+      color: var(--accent-red);
+    }
+
+    .floating-pill-btn {
+      padding: 8px 16px;
+      background: var(--accent-red);
+      border: none;
+      border-radius: 20px;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .floating-pill-btn:hover {
+      background: #c62828;
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-header">
+    <h1>RIVALS SELECTION INTERFACE</h1>
+    <p>Compare two design approaches — click teams to select</p>
+  </div>
+
+  <div class="demo-container">
+    <!-- Option 2: Conference Cards -->
+    <div class="demo-panel">
+      <div class="demo-label">
+        <span class="demo-label-text">Option 2: Conference Cards</span>
+        <span class="demo-label-tag">Tabbed Grid</span>
+      </div>
+      <div class="option2-container">
+        <!-- Conference Tabs -->
+        <div class="conference-tabs">
+          <button class="conference-tab active" data-conf="east">Eastern</button>
+          <button class="conference-tab" data-conf="west">Western</button>
+        </div>
+
+        <!-- Eastern Conference -->
+        <div id="east-divisions" class="divisions-grid">
+          <div class="division-card">
+            <div class="division-header">Atlantic</div>
+            <div class="division-teams">
+              <div class="team-tile" data-team="TOR"><div class="logo-placeholder">TOR</div></div>
+              <div class="team-tile selected" data-team="BOS"><div class="logo-placeholder">BOS</div></div>
+              <div class="team-tile" data-team="MTL"><div class="logo-placeholder">MTL</div></div>
+              <div class="team-tile" data-team="TBL"><div class="logo-placeholder">TBL</div></div>
+              <div class="team-tile" data-team="FLA"><div class="logo-placeholder">FLA</div></div>
+              <div class="team-tile" data-team="BUF"><div class="logo-placeholder">BUF</div></div>
+              <div class="team-tile" data-team="OTT"><div class="logo-placeholder">OTT</div></div>
+              <div class="team-tile" data-team="DET"><div class="logo-placeholder">DET</div></div>
+            </div>
+          </div>
+          <div class="division-card">
+            <div class="division-header">Metropolitan</div>
+            <div class="division-teams">
+              <div class="team-tile selected" data-team="NYR"><div class="logo-placeholder">NYR</div></div>
+              <div class="team-tile" data-team="NYI"><div class="logo-placeholder">NYI</div></div>
+              <div class="team-tile" data-team="PHI"><div class="logo-placeholder">PHI</div></div>
+              <div class="team-tile" data-team="PIT"><div class="logo-placeholder">PIT</div></div>
+              <div class="team-tile" data-team="NJD"><div class="logo-placeholder">NJD</div></div>
+              <div class="team-tile" data-team="WSH"><div class="logo-placeholder">WSH</div></div>
+              <div class="team-tile" data-team="CAR"><div class="logo-placeholder">CAR</div></div>
+              <div class="team-tile" data-team="CBJ"><div class="logo-placeholder">CBJ</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Western Conference (hidden by default) -->
+        <div id="west-divisions" class="divisions-grid" style="display: none;">
+          <div class="division-card">
+            <div class="division-header">Central</div>
+            <div class="division-teams">
+              <div class="team-tile" data-team="COL"><div class="logo-placeholder">COL</div></div>
+              <div class="team-tile" data-team="DAL"><div class="logo-placeholder">DAL</div></div>
+              <div class="team-tile" data-team="WPG"><div class="logo-placeholder">WPG</div></div>
+              <div class="team-tile" data-team="MIN"><div class="logo-placeholder">MIN</div></div>
+              <div class="team-tile" data-team="STL"><div class="logo-placeholder">STL</div></div>
+              <div class="team-tile" data-team="NSH"><div class="logo-placeholder">NSH</div></div>
+              <div class="team-tile" data-team="ARI"><div class="logo-placeholder">ARI</div></div>
+              <div class="team-tile" data-team="CHI"><div class="logo-placeholder">CHI</div></div>
+            </div>
+          </div>
+          <div class="division-card">
+            <div class="division-header">Pacific</div>
+            <div class="division-teams">
+              <div class="team-tile" data-team="VGK"><div class="logo-placeholder">VGK</div></div>
+              <div class="team-tile" data-team="EDM"><div class="logo-placeholder">EDM</div></div>
+              <div class="team-tile" data-team="LAK"><div class="logo-placeholder">LAK</div></div>
+              <div class="team-tile" data-team="VAN"><div class="logo-placeholder">VAN</div></div>
+              <div class="team-tile" data-team="CGY"><div class="logo-placeholder">CGY</div></div>
+              <div class="team-tile" data-team="SEA"><div class="logo-placeholder">SEA</div></div>
+              <div class="team-tile" data-team="SJS"><div class="logo-placeholder">SJS</div></div>
+              <div class="team-tile" data-team="ANA"><div class="logo-placeholder">ANA</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="selection-counter">
+          <div class="counter-pill">
+            <span class="count" id="count2">2</span>
+            <span>rivals selected</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Option 3: Hate Stack -->
+    <div class="demo-panel">
+      <div class="demo-label">
+        <span class="demo-label-text">Option 3: Hate Stack</span>
+        <span class="demo-label-tag">Sticky Scroll</span>
+      </div>
+      <div class="option3-container">
+        <div class="stack-header">
+          <span class="stack-title">SELECT RIVALS</span>
+          <button class="stack-clear">Clear all</button>
+        </div>
+
+        <!-- Atlantic Division -->
+        <div class="division-section">
+          <div class="division-sticky-header">Atlantic Division</div>
+          <div class="team-row selected" data-team="TOR">
+            <div class="team-row-logo"><div class="logo-placeholder">TOR</div></div>
+            <div class="team-row-info">
+              <div class="team-row-name">Toronto Maple Leafs</div>
+              <div class="team-row-abbrev">TOR</div>
+            </div>
+            <div class="team-row-check">
+              <svg fill="none" stroke="white" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+          </div>
+          <div class="team-row" data-team="BOS">
+            <div class="team-row-logo"><div class="logo-placeholder">BOS</div></div>
+            <div class="team-row-info">
+              <div class="team-row-name">Boston Bruins</div>
+              <div class="team-row-abbrev">BOS</div>
+            </div>
+            <div class="team-row-check">
+              <svg fill="none" stroke="white" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+          </div>
+          <div class="team-row selected" data-team="MTL">
+            <div class="team-row-logo"><div class="logo-placeholder">MTL</div></div>
+            <div class="team-row-info">
+              <div class="team-row-name">Montreal Canadiens</div>
+              <div class="team-row-abbrev">MTL</div>
+            </div>
+            <div class="team-row-check">
+              <svg fill="none" stroke="white" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+          </div>
+          <div class="team-row" data-team="TBL">
+            <div class="team-row-logo"><div class="logo-placeholder">TBL</div></div>
+            <div class="team-row-info">
+              <div class="team-row-name">Tampa Bay Lightning</div>
+              <div class="team-row-abbrev">TBL</div>
+            </div>
+            <div class="team-row-check">
+              <svg fill="none" stroke="white" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+          </div>
+          <div class="team-row" data-team="FLA">
+            <div class="team-row-logo"><div class="logo-placeholder">FLA</div></div>
+            <div class="team-row-info">
+              <div class="team-row-name">Florida Panthers</div>
+              <div class="team-row-abbrev">FLA</div>
+            </div>
+            <div class="team-row-check">
+              <svg fill="none" stroke="white" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metropolitan Division -->
+        <div class="division-section">
+          <div class="division-sticky-header">Metropolitan Division</div>
+          <div class="team-row" data-team="NYR">
+            <div class="team-row-logo"><div class="logo-placeholder">NYR</div></div>
+            <div class="team-row-info">
+              <div class="team-row-name">New York Rangers</div>
+              <div class="team-row-abbrev">NYR</div>
+            </div>
+            <div class="team-row-check">
+              <svg fill="none" stroke="white" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+          </div>
+          <div class="team-row" data-team="NYI">
+            <div class="team-row-logo"><div class="logo-placeholder">NYI</div></div>
+            <div class="team-row-info">
+              <div class="team-row-name">New York Islanders</div>
+              <div class="team-row-abbrev">NYI</div>
+            </div>
+            <div class="team-row-check">
+              <svg fill="none" stroke="white" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+          </div>
+          <div class="team-row" data-team="PHI">
+            <div class="team-row-logo"><div class="logo-placeholder">PHI</div></div>
+            <div class="team-row-info">
+              <div class="team-row-name">Philadelphia Flyers</div>
+              <div class="team-row-abbrev">PHI</div>
+            </div>
+            <div class="team-row-check">
+              <svg fill="none" stroke="white" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+          </div>
+          <div class="team-row" data-team="PIT">
+            <div class="team-row-logo"><div class="logo-placeholder">PIT</div></div>
+            <div class="team-row-info">
+              <div class="team-row-name">Pittsburgh Penguins</div>
+              <div class="team-row-abbrev">PIT</div>
+            </div>
+            <div class="team-row-check">
+              <svg fill="none" stroke="white" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+          </div>
+          <div class="team-row" data-team="WSH">
+            <div class="team-row-logo"><div class="logo-placeholder">WSH</div></div>
+            <div class="team-row-info">
+              <div class="team-row-name">Washington Capitals</div>
+              <div class="team-row-abbrev">WSH</div>
+            </div>
+            <div class="team-row-check">
+              <svg fill="none" stroke="white" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Central Division -->
+        <div class="division-section">
+          <div class="division-sticky-header">Central Division</div>
+          <div class="team-row" data-team="COL">
+            <div class="team-row-logo"><div class="logo-placeholder">COL</div></div>
+            <div class="team-row-info">
+              <div class="team-row-name">Colorado Avalanche</div>
+              <div class="team-row-abbrev">COL</div>
+            </div>
+            <div class="team-row-check">
+              <svg fill="none" stroke="white" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+          </div>
+          <div class="team-row" data-team="DAL">
+            <div class="team-row-logo"><div class="logo-placeholder">DAL</div></div>
+            <div class="team-row-info">
+              <div class="team-row-name">Dallas Stars</div>
+              <div class="team-row-abbrev">DAL</div>
+            </div>
+            <div class="team-row-check">
+              <svg fill="none" stroke="white" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+          </div>
+          <div class="team-row" data-team="WPG">
+            <div class="team-row-logo"><div class="logo-placeholder">WPG</div></div>
+            <div class="team-row-info">
+              <div class="team-row-name">Winnipeg Jets</div>
+              <div class="team-row-abbrev">WPG</div>
+            </div>
+            <div class="team-row-check">
+              <svg fill="none" stroke="white" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pacific Division -->
+        <div class="division-section">
+          <div class="division-sticky-header">Pacific Division</div>
+          <div class="team-row" data-team="VGK">
+            <div class="team-row-logo"><div class="logo-placeholder">VGK</div></div>
+            <div class="team-row-info">
+              <div class="team-row-name">Vegas Golden Knights</div>
+              <div class="team-row-abbrev">VGK</div>
+            </div>
+            <div class="team-row-check">
+              <svg fill="none" stroke="white" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+          </div>
+          <div class="team-row" data-team="EDM">
+            <div class="team-row-logo"><div class="logo-placeholder">EDM</div></div>
+            <div class="team-row-info">
+              <div class="team-row-name">Edmonton Oilers</div>
+              <div class="team-row-abbrev">EDM</div>
+            </div>
+            <div class="team-row-check">
+              <svg fill="none" stroke="white" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+          </div>
+          <div class="team-row" data-team="VAN">
+            <div class="team-row-logo"><div class="logo-placeholder">VAN</div></div>
+            <div class="team-row-info">
+              <div class="team-row-name">Vancouver Canucks</div>
+              <div class="team-row-abbrev">VAN</div>
+            </div>
+            <div class="team-row-check">
+              <svg fill="none" stroke="white" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div style="height: 100px;"></div>
+
+        <div class="floating-counter">
+          <div class="floating-pill">
+            <span class="floating-pill-count"><span id="count3">2</span> rivals selected</span>
+            <button class="floating-pill-btn">Done</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Option 2: Conference tabs
+    document.querySelectorAll('.conference-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.conference-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        const conf = tab.dataset.conf;
+        document.getElementById('east-divisions').style.display = conf === 'east' ? 'grid' : 'none';
+        document.getElementById('west-divisions').style.display = conf === 'west' ? 'grid' : 'none';
+      });
+    });
+
+    // Option 2: Team tile selection
+    document.querySelectorAll('.team-tile').forEach(tile => {
+      tile.addEventListener('click', () => {
+        tile.classList.toggle('selected');
+        updateCount2();
+      });
+    });
+
+    function updateCount2() {
+      const count = document.querySelectorAll('.team-tile.selected').length;
+      document.getElementById('count2').textContent = count;
+    }
+
+    // Option 3: Team row selection
+    document.querySelectorAll('.team-row').forEach(row => {
+      row.addEventListener('click', () => {
+        row.classList.toggle('selected');
+        updateCount3();
+      });
+    });
+
+    function updateCount3() {
+      const count = document.querySelectorAll('.team-row.selected').length;
+      document.getElementById('count3').textContent = count;
+    }
+
+    // Clear all for option 3
+    document.querySelector('.stack-clear').addEventListener('click', () => {
+      document.querySelectorAll('.team-row.selected').forEach(row => {
+        row.classList.remove('selected');
+      });
+      updateCount3();
+    });
+  </script>
+</body>
+</html>

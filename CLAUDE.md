@@ -62,4 +62,11 @@ npm run preview  # Preview build
 iOS source: `/Users/shethm/Documents/nhl-rivals/RivalWatch`
 Useful NHL API resources:
 - https://github.com/Zmalski/NHL-API-Reference
-- https://github.com/coreyjs/nhl-api-py 
+- https://github.com/coreyjs/nhl-api-py
+
+## NHL data notes (verified Oct 2026)
+- api-web.nhle.com returns 403 without a browser `User-Agent` header (server-side fetches need one).
+- Goal events in `/gamecenter/{id}/play-by-play` carry `goalieInNetId`, `xCoord/yCoord`, and `pptReplayUrl` (wsr.nhle.com sprites: ~140 frames at 10 fps of all player + puck positions in inches, 2400x1020 rink). Puck is the entry with `id: 1`. wsr.nhle.com returns HTML unless the request sends `Referer: https://www.nhl.com/` plus a browser User-Agent.
+- Player images: action shots `assets.nhle.com/mugs/actionshots/1296x729/{playerId}.jpg`; transparent headshots via `/roster/{TEAM}/{season}` → `headshot`. Copyrighted; not used in designs (Maya: no player portraits).
+- On-ice skaters per goal: `https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId={id}` (typeCode 517 = shifts; on ice if start < t <= end).
+- Dressed players / starters: `/gamecenter/{id}/boxscore` -> `playerByGameStats`.

@@ -1,0 +1,1797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HOCKEI — Broadcast Theme Concept</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* ========================================
+       BROADCAST THEME — CSS Custom Properties
+       ======================================== */
+
+    :root {
+      /* Base palette — warm near-blacks */
+      --bg-deep: #0a0a09;
+      --bg-surface: #141311;
+      --bg-elevated: #1c1a17;
+      --bg-spotlight: #242220;
+
+      /* Text — warm off-whites */
+      --text-primary: #f5f3ef;
+      --text-secondary: #a8a49c;
+      --text-tertiary: #6b675f;
+      --text-dim: #4a4740;
+
+      /* Borders */
+      --border-subtle: rgba(245, 243, 239, 0.06);
+      --border-visible: rgba(245, 243, 239, 0.12);
+      --border-strong: rgba(245, 243, 239, 0.2);
+
+      /* Typography */
+      --font-display: 'Bebas Neue', sans-serif;
+      --font-sans: 'DM Sans', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      /* Type scale */
+      --text-hero: 4rem;
+      --text-display: 2.5rem;
+      --text-headline: 1.5rem;
+      --text-title: 1.125rem;
+      --text-body: 0.9375rem;
+      --text-caption: 0.8125rem;
+      --text-micro: 0.6875rem;
+
+      /* Spacing */
+      --space-xs: 0.25rem;
+      --space-sm: 0.5rem;
+      --space-md: 1rem;
+      --space-lg: 1.5rem;
+      --space-xl: 2rem;
+      --space-2xl: 3rem;
+
+      /* Animation */
+      --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+      --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+      /* Dynamic team color (set via JS) */
+      --team-color: #CE1126;
+      --team-color-dim: rgba(206, 17, 38, 0.15);
+      --team-color-glow: rgba(206, 17, 38, 0.4);
+    }
+
+    /* ========================================
+       BASE STYLES
+       ======================================== */
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 16px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg-deep);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-visible);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--border-strong);
+    }
+
+    /* ========================================
+       TYPOGRAPHY
+       ======================================== */
+
+    .display {
+      font-family: var(--font-display);
+      font-weight: 400;
+      letter-spacing: 0.02em;
+      line-height: 0.9;
+      text-transform: uppercase;
+    }
+
+    .headline {
+      font-family: var(--font-sans);
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .mono {
+      font-family: var(--font-mono);
+      font-feature-settings: 'tnum' 1;
+    }
+
+    /* ========================================
+       LAYOUT
+       ======================================== */
+
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 var(--space-md);
+    }
+
+    /* ========================================
+       NAVIGATION
+       ======================================== */
+
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: var(--space-md) 0;
+      background: linear-gradient(to bottom, var(--bg-deep) 60%, transparent);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+
+    .nav-logo-mark {
+      width: 32px;
+      height: 32px;
+    }
+
+    .nav-logo-text {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      letter-spacing: 0.1em;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: var(--space-lg);
+    }
+
+    .nav-link {
+      position: relative;
+      font-size: var(--text-caption);
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      transition: color 0.2s ease;
+    }
+
+    .nav-link:hover,
+    .nav-link.active {
+      color: var(--text-primary);
+    }
+
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--text-primary);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.3s var(--ease-out);
+    }
+
+    .nav-link.active::after,
+    .nav-link:hover::after {
+      transform: scaleX(1);
+    }
+
+    /* ========================================
+       LOGO CONCEPT
+       ======================================== */
+
+    .logo-mark {
+      display: inline-block;
+    }
+
+    .logo-mark svg {
+      display: block;
+    }
+
+    /* ========================================
+       SECTION HEADERS
+       ======================================== */
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      margin-bottom: var(--space-lg);
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: var(--text-headline);
+      color: var(--text-secondary);
+      letter-spacing: 0.1em;
+    }
+
+    .section-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, var(--border-visible), transparent);
+    }
+
+    /* ========================================
+       DAY DIVIDER
+       ======================================== */
+
+    .day-divider {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      padding: var(--space-md) 0;
+    }
+
+    .day-divider-line {
+      flex: 1;
+      height: 1px;
+      background: var(--border-subtle);
+    }
+
+    .day-divider-text {
+      font-family: var(--font-mono);
+      font-size: var(--text-micro);
+      font-weight: 500;
+      color: var(--text-tertiary);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    /* ========================================
+       LOSS CARD — The Star
+       ======================================== */
+
+    .loss-card {
+      position: relative;
+      background: var(--bg-surface);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: var(--space-md);
+      border: 1px solid var(--border-subtle);
+      transition: transform 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out);
+    }
+
+    .loss-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Top gradient bar */
+    .loss-card-bar {
+      height: 4px;
+      background: linear-gradient(to right, var(--team-color), transparent 80%);
+    }
+
+    /* Ambient glow */
+    .loss-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 120px;
+      background: radial-gradient(ellipse at top left, var(--team-color-dim), transparent 70%);
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    .loss-card-content {
+      position: relative;
+      padding: var(--space-xl);
+    }
+
+    /* Score section */
+    .loss-card-score {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-xl);
+      margin-bottom: var(--space-lg);
+    }
+
+    .loss-card-team {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .loss-card-logo {
+      width: 72px;
+      height: 72px;
+      object-fit: contain;
+      transition: filter 0.3s ease, opacity 0.3s ease;
+    }
+
+    .loss-card-logo.loser {
+      filter: saturate(0.3) brightness(0.6);
+      opacity: 0.5;
+    }
+
+    .loss-card-abbrev {
+      font-family: var(--font-mono);
+      font-size: var(--text-caption);
+      font-weight: 600;
+      color: var(--text-tertiary);
+      letter-spacing: 0.1em;
+    }
+
+    .loss-card-scores {
+      display: flex;
+      align-items: baseline;
+      gap: var(--space-md);
+    }
+
+    .loss-card-num {
+      font-family: var(--font-mono);
+      font-size: var(--text-display);
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .loss-card-num.loser {
+      color: var(--text-tertiary);
+    }
+
+    .loss-card-num.winner {
+      color: var(--text-primary);
+    }
+
+    .loss-card-separator {
+      font-family: var(--font-display);
+      font-size: var(--text-title);
+      color: var(--text-dim);
+    }
+
+    /* Info section */
+    .loss-card-info {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding-top: var(--space-md);
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .loss-card-label {
+      font-family: var(--font-display);
+      font-size: var(--text-headline);
+      color: var(--team-color);
+      letter-spacing: 0.05em;
+    }
+
+    .loss-card-meta {
+      text-align: right;
+    }
+
+    .loss-card-status {
+      font-family: var(--font-mono);
+      font-size: var(--text-micro);
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .loss-card-date {
+      font-size: var(--text-caption);
+      color: var(--text-secondary);
+    }
+
+    /* Streak banner */
+    .loss-card-streak {
+      background: var(--team-color-dim);
+      padding: var(--space-sm) var(--space-md);
+      text-align: center;
+      border-top: 1px solid var(--team-color-glow);
+    }
+
+    .loss-card-streak-text {
+      font-family: var(--font-mono);
+      font-size: var(--text-caption);
+      font-weight: 500;
+      color: var(--team-color);
+      letter-spacing: 0.05em;
+    }
+
+    /* ========================================
+       GOAL CARD — Secondary Event
+       ======================================== */
+
+    .goal-card {
+      position: relative;
+      background: var(--bg-surface);
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      border-left: 3px solid var(--team-color);
+      padding: var(--space-md);
+      margin-bottom: var(--space-sm);
+      transition: background 0.2s ease;
+    }
+
+    .goal-card:hover {
+      background: var(--bg-elevated);
+    }
+
+    .goal-card-main {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+    }
+
+    .goal-card-victim-logo {
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
+      filter: saturate(0.5) brightness(0.7);
+      opacity: 0.6;
+    }
+
+    .goal-card-content {
+      flex: 1;
+    }
+
+    .goal-card-title {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      margin-bottom: 2px;
+    }
+
+    .goal-card-label {
+      font-family: var(--font-display);
+      font-size: var(--text-title);
+      color: var(--team-color);
+      letter-spacing: 0.02em;
+    }
+
+    .goal-card-period {
+      font-family: var(--font-mono);
+      font-size: var(--text-caption);
+      color: var(--text-tertiary);
+    }
+
+    .goal-card-scorer-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+      font-size: var(--text-caption);
+      color: var(--text-secondary);
+    }
+
+    .goal-card-scorer-logo {
+      width: 16px;
+      height: 16px;
+      object-fit: contain;
+    }
+
+    .goal-card-scorer {
+      color: var(--text-secondary);
+    }
+
+    .goal-card-shot {
+      color: var(--text-tertiary);
+    }
+
+    .goal-card-meta {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+    }
+
+    .goal-card-badges {
+      display: flex;
+      gap: var(--space-xs);
+    }
+
+    .goal-card-badge {
+      font-family: var(--font-mono);
+      font-size: var(--text-micro);
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .goal-card-badge.pp {
+      background: rgba(255, 184, 28, 0.2);
+      color: #FFB81C;
+    }
+
+    .goal-card-badge.shg {
+      background: rgba(206, 17, 38, 0.3);
+      color: #ff6b6b;
+    }
+
+    /* ========================================
+       LOSS CARD — OPTION A (Header bar)
+       ======================================== */
+
+    .loss-card-a {
+      background: var(--bg-surface);
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+      overflow: hidden;
+      margin-bottom: var(--space-md);
+    }
+
+    .loss-card-a-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-sm) var(--space-md);
+      background: linear-gradient(to right, var(--team-color-dim), transparent);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .loss-card-a-header-left {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .loss-card-a-team {
+      font-family: var(--font-display);
+      font-size: var(--text-title);
+      color: var(--team-color);
+      letter-spacing: 0.05em;
+    }
+
+    .loss-card-a-label {
+      font-family: var(--font-mono);
+      font-size: var(--text-micro);
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .loss-card-a-date {
+      font-family: var(--font-mono);
+      font-size: var(--text-micro);
+      color: var(--text-tertiary);
+    }
+
+    .loss-card-a-body {
+      padding: var(--space-lg) var(--space-md);
+    }
+
+    .loss-card-a-matchup {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-lg);
+    }
+
+    .loss-card-a-side {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+    }
+
+    .loss-card-a-side.loser {
+      flex-direction: row;
+    }
+
+    .loss-card-a-side.winner {
+      flex-direction: row;
+    }
+
+    .loss-card-a-logo {
+      width: 56px;
+      height: 56px;
+      object-fit: contain;
+    }
+
+    .loss-card-a-side.loser .loss-card-a-logo {
+      filter: saturate(0.4) brightness(0.6);
+      opacity: 0.5;
+    }
+
+    .loss-card-a-score {
+      font-size: 2.5rem;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .loss-card-a-side.loser .loss-card-a-score {
+      color: var(--text-tertiary);
+    }
+
+    .loss-card-a-side.winner .loss-card-a-score {
+      color: var(--text-primary);
+    }
+
+    .loss-card-a-vs {
+      font-family: var(--font-display);
+      font-size: var(--text-title);
+      color: var(--text-dim);
+    }
+
+    .loss-card-a-streak {
+      padding: var(--space-sm) var(--space-md);
+      background: var(--team-color-dim);
+      border-top: 1px solid var(--border-subtle);
+      font-family: var(--font-mono);
+      font-size: var(--text-caption);
+      font-weight: 500;
+      color: var(--team-color);
+      text-align: center;
+    }
+
+    /* ========================================
+       LOSS CARD — OPTION B (Large team name)
+       ======================================== */
+
+    .loss-card-b {
+      background: var(--bg-surface);
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+      border-left: 4px solid var(--team-color);
+      overflow: hidden;
+      margin-bottom: var(--space-md);
+    }
+
+    .loss-card-b-top {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      padding: var(--space-lg);
+      background: linear-gradient(135deg, var(--team-color-dim), transparent 60%);
+    }
+
+    .loss-card-b-logo-big {
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
+      filter: saturate(0.4) brightness(0.6);
+      opacity: 0.6;
+    }
+
+    .loss-card-b-team-info {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+
+    .loss-card-b-team-name {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      color: var(--team-color);
+      letter-spacing: 0.05em;
+      line-height: 1;
+    }
+
+    .loss-card-b-badge {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: var(--text-micro);
+      font-weight: 600;
+      padding: 4px 8px;
+      background: var(--team-color);
+      color: white;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      width: fit-content;
+    }
+
+    .loss-card-b-score-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-md) var(--space-lg);
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .loss-card-b-score-side {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .loss-card-b-abbrev {
+      font-family: var(--font-mono);
+      font-size: var(--text-caption);
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    .loss-card-b-abbrev.loser {
+      color: var(--text-tertiary);
+    }
+
+    .loss-card-b-abbrev.winner {
+      color: var(--text-secondary);
+    }
+
+    .loss-card-b-num {
+      font-size: 2rem;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .loss-card-b-num.loser {
+      color: var(--text-tertiary);
+    }
+
+    .loss-card-b-num.winner {
+      color: var(--text-primary);
+    }
+
+    .loss-card-b-final {
+      font-family: var(--font-mono);
+      font-size: var(--text-micro);
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .loss-card-b-footer {
+      display: flex;
+      justify-content: space-between;
+      padding: var(--space-sm) var(--space-lg);
+      background: var(--bg-elevated);
+      font-size: var(--text-caption);
+      color: var(--text-secondary);
+    }
+
+    /* ========================================
+       LOSS CARD — OPTION C (Asymmetric)
+       ======================================== */
+
+    .loss-card-c {
+      background: var(--bg-surface);
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+      overflow: hidden;
+      margin-bottom: var(--space-md);
+    }
+
+    .loss-card-c-main {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-md) var(--space-lg);
+      background: linear-gradient(to right, var(--team-color-dim) 0%, transparent 50%);
+    }
+
+    .loss-card-c-loser {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+    }
+
+    .loss-card-c-logo {
+      width: 48px;
+      height: 48px;
+      object-fit: contain;
+      filter: saturate(0.4) brightness(0.6);
+      opacity: 0.6;
+    }
+
+    .loss-card-c-loser-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .loss-card-c-team-label {
+      font-family: var(--font-display);
+      font-size: var(--text-title);
+      color: var(--team-color);
+      letter-spacing: 0.03em;
+    }
+
+    .loss-card-c-streak-inline {
+      font-family: var(--font-mono);
+      font-size: var(--text-micro);
+      color: var(--text-secondary);
+    }
+
+    .loss-card-c-result {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: var(--space-xs);
+    }
+
+    .loss-card-c-scores {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .loss-card-c-num {
+      font-size: 1.75rem;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .loss-card-c-num.loser {
+      color: var(--text-tertiary);
+    }
+
+    .loss-card-c-num.winner {
+      color: var(--text-primary);
+    }
+
+    .loss-card-c-sep {
+      color: var(--text-dim);
+    }
+
+    .loss-card-c-opponent {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+    }
+
+    .loss-card-c-vs {
+      font-size: var(--text-micro);
+      color: var(--text-tertiary);
+    }
+
+    .loss-card-c-opp-logo {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+    }
+
+    .loss-card-c-opp-abbrev {
+      font-family: var(--font-mono);
+      font-size: var(--text-caption);
+      color: var(--text-secondary);
+    }
+
+    .loss-card-c-meta {
+      display: flex;
+      justify-content: space-between;
+      padding: var(--space-sm) var(--space-lg);
+      border-top: 1px solid var(--border-subtle);
+      font-size: var(--text-caption);
+      color: var(--text-tertiary);
+    }
+
+    /* ========================================
+       GOAL CARD — OPTION B (Two-row)
+       ======================================== */
+
+    .goal-card-b {
+      background: var(--bg-surface);
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      border-left: 3px solid var(--team-color);
+      overflow: hidden;
+      margin-bottom: var(--space-sm);
+    }
+
+    .goal-card-b-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: var(--space-sm) var(--space-md);
+      background: linear-gradient(to right, var(--team-color-dim), transparent 60%);
+    }
+
+    .goal-card-b-victim-logo {
+      width: 24px;
+      height: 24px;
+      object-fit: contain;
+      filter: saturate(0.5) brightness(0.7);
+      opacity: 0.6;
+    }
+
+    .goal-card-b-label {
+      font-family: var(--font-display);
+      font-size: var(--text-body);
+      color: var(--team-color);
+      letter-spacing: 0.03em;
+      flex: 1;
+    }
+
+    .goal-card-b-meta {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+    }
+
+    .goal-card-b-period {
+      font-family: var(--font-mono);
+      font-size: var(--text-micro);
+      color: var(--text-tertiary);
+    }
+
+    .goal-card-b-badge {
+      font-family: var(--font-mono);
+      font-size: var(--text-micro);
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .goal-card-b-badge.pp {
+      background: rgba(255, 184, 28, 0.2);
+      color: #FFB81C;
+    }
+
+    .goal-card-b-badge.shg {
+      background: rgba(206, 17, 38, 0.3);
+      color: #ff6b6b;
+    }
+
+    .goal-card-b-scorer {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: var(--space-sm) var(--space-md);
+      font-size: var(--text-caption);
+      color: var(--text-secondary);
+    }
+
+    .goal-card-b-scorer-logo {
+      width: 16px;
+      height: 16px;
+      object-fit: contain;
+    }
+
+    .goal-card-b-scorer-name {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .goal-card-b-shot {
+      color: var(--text-tertiary);
+    }
+
+    /* ========================================
+       STATS CARD
+       ======================================== */
+
+    .stats-card {
+      background: var(--bg-surface);
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+      overflow: hidden;
+      margin-bottom: var(--space-md);
+    }
+
+    .stats-card-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      padding: var(--space-md);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .stats-card-logo {
+      width: 48px;
+      height: 48px;
+      object-fit: contain;
+    }
+
+    .stats-card-info {
+      flex: 1;
+    }
+
+    .stats-card-name {
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+
+    .stats-card-context {
+      font-size: var(--text-caption);
+      color: var(--text-secondary);
+    }
+
+    .stats-card-live {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+    }
+
+    .stats-card-live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4ade80;
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .stats-card-body {
+      padding: var(--space-md);
+    }
+
+    .stats-card-section-title {
+      font-family: var(--font-mono);
+      font-size: var(--text-micro);
+      font-weight: 500;
+      color: var(--team-color);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: var(--space-sm);
+    }
+
+    .curse-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-sm) var(--space-md);
+      background: var(--bg-elevated);
+      border-radius: 6px;
+      margin-bottom: var(--space-xs);
+    }
+
+    .curse-text {
+      font-size: var(--text-body);
+      color: var(--text-primary);
+    }
+
+    .curse-severity {
+      font-family: var(--font-mono);
+      font-size: var(--text-caption);
+      color: var(--team-color);
+      letter-spacing: 0.1em;
+    }
+
+    /* ========================================
+       TEAM SELECTOR
+       ======================================== */
+
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: var(--space-sm);
+    }
+
+    .team-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: var(--space-md);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .team-item:hover {
+      background: var(--bg-elevated);
+      border-color: var(--border-visible);
+    }
+
+    .team-item.selected {
+      background: var(--team-color-dim);
+      border-color: var(--team-color);
+    }
+
+    .team-item-logo {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+    }
+
+    .team-item-name {
+      font-size: var(--text-caption);
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .team-item-check {
+      margin-left: auto;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--border-visible);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .team-item.selected .team-item-check {
+      background: var(--team-color);
+      border-color: var(--team-color);
+    }
+
+    .team-item-check svg {
+      width: 12px;
+      height: 12px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .team-item.selected .team-item-check svg {
+      opacity: 1;
+    }
+
+    /* ========================================
+       EMPTY STATE
+       ======================================== */
+
+    .empty-state {
+      text-align: center;
+      padding: var(--space-2xl) var(--space-md);
+    }
+
+    .empty-state-title {
+      font-family: var(--font-display);
+      font-size: var(--text-hero);
+      color: var(--text-tertiary);
+      letter-spacing: 0.1em;
+      margin-bottom: var(--space-md);
+      animation: watching-pulse 3s ease-in-out infinite;
+    }
+
+    @keyframes watching-pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 0.7; }
+    }
+
+    .empty-state-dots {
+      display: flex;
+      justify-content: center;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-lg);
+    }
+
+    .empty-state-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-dim);
+      animation: dot-bounce 1.4s ease-in-out infinite;
+    }
+
+    .empty-state-dot:nth-child(2) { animation-delay: 0.2s; }
+    .empty-state-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes dot-bounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.3; }
+      40% { transform: translateY(-8px); opacity: 1; }
+    }
+
+    .empty-state-text {
+      font-size: var(--text-body);
+      color: var(--text-secondary);
+    }
+
+    /* ========================================
+       BUTTONS
+       ======================================== */
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-sm);
+      padding: var(--space-sm) var(--space-md);
+      font-family: var(--font-sans);
+      font-size: var(--text-caption);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--team-color);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid var(--border-visible);
+    }
+
+    .btn-ghost:hover {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+    }
+
+    /* ========================================
+       LIVE INDICATOR
+       ======================================== */
+
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: rgba(239, 68, 68, 0.15);
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: var(--text-micro);
+      font-weight: 600;
+      color: #ef4444;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .live-badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #ef4444;
+      animation: live-pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes live-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    /* ========================================
+       CARD ENTRANCE ANIMATION
+       ======================================== */
+
+    .card-enter {
+      animation: card-slide-in 0.5s var(--ease-out) forwards;
+    }
+
+    @keyframes card-slide-in {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Staggered delays */
+    .card-enter:nth-child(1) { animation-delay: 0ms; }
+    .card-enter:nth-child(2) { animation-delay: 50ms; }
+    .card-enter:nth-child(3) { animation-delay: 100ms; }
+    .card-enter:nth-child(4) { animation-delay: 150ms; }
+    .card-enter:nth-child(5) { animation-delay: 200ms; }
+
+    /* ========================================
+       PAGE SECTIONS
+       ======================================== */
+
+    .page-section {
+      padding: var(--space-2xl) 0;
+    }
+
+    .page-section + .page-section {
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    main {
+      padding-top: 80px;
+    }
+
+    /* ========================================
+       TYPOGRAPHY SHOWCASE
+       ======================================== */
+
+    .type-showcase {
+      margin-bottom: var(--space-2xl);
+    }
+
+    .type-row {
+      display: flex;
+      align-items: baseline;
+      gap: var(--space-md);
+      margin-bottom: var(--space-md);
+      padding-bottom: var(--space-md);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .type-label {
+      width: 120px;
+      flex-shrink: 0;
+      font-family: var(--font-mono);
+      font-size: var(--text-micro);
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .type-sample {
+      flex: 1;
+    }
+
+    /* ========================================
+       COLOR SWATCHES
+       ======================================== */
+
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: var(--space-sm);
+      margin-bottom: var(--space-lg);
+    }
+
+    .color-swatch {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: var(--space-sm);
+    }
+
+    .color-swatch-name {
+      font-family: var(--font-mono);
+      font-size: var(--text-micro);
+      color: inherit;
+      opacity: 0.8;
+    }
+
+    .color-swatch-value {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: inherit;
+      opacity: 0.6;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a href="#" class="nav-logo">
+        <!-- Logo Mark -->
+        <svg class="nav-logo-mark" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="4" width="6" height="24" rx="1" fill="currentColor"/>
+          <rect x="24" y="4" width="6" height="24" rx="1" fill="currentColor"/>
+          <rect x="8" y="13" width="16" height="6" rx="1" fill="currentColor"/>
+          <!-- Subtle goal shape in negative space -->
+          <rect x="12" y="26" width="8" height="3" rx="0.5" fill="var(--team-color)" opacity="0.6"/>
+        </svg>
+        <span class="nav-logo-text">HOCKEI</span>
+      </a>
+      <div class="nav-links">
+        <a href="#feed" class="nav-link active">Feed</a>
+        <a href="#stats" class="nav-link">Stats</a>
+        <a href="#rivals" class="nav-link">Rivals</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="container">
+
+      <!-- ==========================================
+           LOSS CARD ALTERNATIVES
+           ========================================== -->
+      <section class="page-section">
+        <div class="section-header">
+          <h2 class="section-title">Loss Card — Option A</h2>
+          <div class="section-line"></div>
+        </div>
+        <p style="color: var(--text-secondary); font-size: var(--text-caption); margin-bottom: var(--space-lg);">
+          Header bar with "TEAM • DEFEATED" — clearest labeling, similar to current design but refined
+        </p>
+
+        <!-- OPTION A: Header bar with team label -->
+        <div class="loss-card-a" style="--team-color: #023ba6; --team-color-dim: rgba(2, 59, 166, 0.12); --team-color-glow: rgba(2, 59, 166, 0.4);">
+          <div class="loss-card-a-header">
+            <div class="loss-card-a-header-left">
+              <span class="loss-card-a-team">TOR</span>
+              <span class="loss-card-a-label">DEFEATED</span>
+            </div>
+            <span class="loss-card-a-date">Final • Jan 28</span>
+          </div>
+          <div class="loss-card-a-body">
+            <div class="loss-card-a-matchup">
+              <div class="loss-card-a-side loser">
+                <img src="../public/logos/tor.png" alt="TOR" class="loss-card-a-logo" />
+                <span class="loss-card-a-score mono">2</span>
+              </div>
+              <div class="loss-card-a-vs">—</div>
+              <div class="loss-card-a-side winner">
+                <span class="loss-card-a-score mono">5</span>
+                <img src="../public/logos/bos.png" alt="BOS" class="loss-card-a-logo" />
+              </div>
+            </div>
+          </div>
+          <div class="loss-card-a-streak">4 consecutive losses</div>
+        </div>
+      </section>
+
+      <section class="page-section">
+        <div class="section-header">
+          <h2 class="section-title">Loss Card — Option B</h2>
+          <div class="section-line"></div>
+        </div>
+        <p style="color: var(--text-secondary); font-size: var(--text-caption); margin-bottom: var(--space-lg);">
+          Large team name with "DEFEATED" badge — more dramatic, broadcast-style
+        </p>
+
+        <!-- OPTION B: Large team name, badge style -->
+        <div class="loss-card-b" style="--team-color: #023ba6; --team-color-dim: rgba(2, 59, 166, 0.12); --team-color-glow: rgba(2, 59, 166, 0.4);">
+          <div class="loss-card-b-top">
+            <img src="../public/logos/tor.png" alt="TOR" class="loss-card-b-logo-big" />
+            <div class="loss-card-b-team-info">
+              <span class="loss-card-b-team-name">TORONTO</span>
+              <span class="loss-card-b-badge">DEFEATED</span>
+            </div>
+          </div>
+          <div class="loss-card-b-score-row">
+            <div class="loss-card-b-score-side">
+              <span class="loss-card-b-abbrev loser">TOR</span>
+              <span class="loss-card-b-num loser mono">2</span>
+            </div>
+            <span class="loss-card-b-final">FINAL</span>
+            <div class="loss-card-b-score-side">
+              <span class="loss-card-b-num winner mono">5</span>
+              <span class="loss-card-b-abbrev winner">BOS</span>
+            </div>
+          </div>
+          <div class="loss-card-b-footer">
+            <span>4 consecutive losses</span>
+            <span>Jan 28, 2026</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="page-section">
+        <div class="section-header">
+          <h2 class="section-title">Loss Card — Option C</h2>
+          <div class="section-line"></div>
+        </div>
+        <p style="color: var(--text-secondary); font-size: var(--text-caption); margin-bottom: var(--space-lg);">
+          Asymmetric layout — losing team emphasized on left, compact and modern
+        </p>
+
+        <!-- OPTION C: Asymmetric, loser emphasized -->
+        <div class="loss-card-c" style="--team-color: #023ba6; --team-color-dim: rgba(2, 59, 166, 0.12); --team-color-glow: rgba(2, 59, 166, 0.4);">
+          <div class="loss-card-c-main">
+            <div class="loss-card-c-loser">
+              <img src="../public/logos/tor.png" alt="TOR" class="loss-card-c-logo" />
+              <div class="loss-card-c-loser-info">
+                <span class="loss-card-c-team-label">TOR • DEFEATED</span>
+                <span class="loss-card-c-streak-inline">4 straight losses</span>
+              </div>
+            </div>
+            <div class="loss-card-c-result">
+              <div class="loss-card-c-scores">
+                <span class="loss-card-c-num loser mono">2</span>
+                <span class="loss-card-c-sep">–</span>
+                <span class="loss-card-c-num winner mono">5</span>
+              </div>
+              <div class="loss-card-c-opponent">
+                <span class="loss-card-c-vs">vs</span>
+                <img src="../public/logos/bos.png" alt="BOS" class="loss-card-c-opp-logo" />
+                <span class="loss-card-c-opp-abbrev">BOS</span>
+              </div>
+            </div>
+          </div>
+          <div class="loss-card-c-meta">
+            <span>Final</span>
+            <span>Jan 28, 2026</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           GOAL CARD ALTERNATIVES
+           ========================================== -->
+      <section class="page-section">
+        <div class="section-header">
+          <h2 class="section-title">Goal Card — Option A</h2>
+          <div class="section-line"></div>
+        </div>
+        <p style="color: var(--text-secondary); font-size: var(--text-caption); margin-bottom: var(--space-lg);">
+          Current design with both logos visible
+        </p>
+
+        <div class="goal-card card-enter" style="--team-color: #023ba6; --team-color-dim: rgba(2, 59, 166, 0.12);">
+          <div class="goal-card-main">
+            <img src="../public/logos/tor.png" alt="TOR" class="goal-card-victim-logo" />
+            <div class="goal-card-content">
+              <div class="goal-card-title">
+                <span class="goal-card-label">GOAL AGAINST TOR</span>
+                <span class="goal-card-period">2nd 14:32</span>
+                <span class="goal-card-badge pp">PP</span>
+              </div>
+              <div class="goal-card-scorer-row">
+                <img src="../public/logos/bos.png" alt="BOS" class="goal-card-scorer-logo" />
+                <span class="goal-card-scorer">D. Pastrnak</span>
+                <span class="goal-card-shot">wrist shot</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page-section">
+        <div class="section-header">
+          <h2 class="section-title">Goal Card — Option B</h2>
+          <div class="section-line"></div>
+        </div>
+        <p style="color: var(--text-secondary); font-size: var(--text-caption); margin-bottom: var(--space-lg);">
+          Two-row layout with clearer team separation
+        </p>
+
+        <div class="goal-card-b" style="--team-color: #023ba6; --team-color-dim: rgba(2, 59, 166, 0.12);">
+          <div class="goal-card-b-header">
+            <img src="../public/logos/tor.png" alt="TOR" class="goal-card-b-victim-logo" />
+            <span class="goal-card-b-label">TOR • GOAL AGAINST</span>
+            <div class="goal-card-b-meta">
+              <span class="goal-card-b-period">2nd 14:32</span>
+              <span class="goal-card-b-badge pp">PP</span>
+            </div>
+          </div>
+          <div class="goal-card-b-scorer">
+            <img src="../public/logos/bos.png" alt="BOS" class="goal-card-b-scorer-logo" />
+            <span class="goal-card-b-scorer-name">D. Pastrnak</span>
+            <span class="goal-card-b-shot">wrist shot</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- STATS SECTION -->
+      <section id="stats" class="page-section">
+        <div class="section-header">
+          <h2 class="section-title">Stats</h2>
+          <div class="section-line"></div>
+        </div>
+
+        <div class="stats-card" style="--team-color: #023ba6; --team-color-dim: rgba(2, 59, 166, 0.12);">
+          <div class="stats-card-header">
+            <img src="../public/logos/tor.png" alt="Toronto Maple Leafs" class="stats-card-logo" />
+            <div class="stats-card-info">
+              <div class="stats-card-name">Toronto Maple Leafs</div>
+              <div class="stats-card-context">Playing tonight vs BOS</div>
+            </div>
+            <div class="stats-card-live">
+              <span class="stats-card-live-dot"></span>
+            </div>
+          </div>
+          <div class="stats-card-body">
+            <div class="stats-card-section-title">Relevant to tonight</div>
+            <div class="curse-item">
+              <span class="curse-text">0-6 in Saturday home games</span>
+              <span class="curse-severity">████░</span>
+            </div>
+            <div class="curse-item">
+              <span class="curse-text">3-12 vs Atlantic Division</span>
+              <span class="curse-severity">███░░</span>
+            </div>
+            <div class="curse-item">
+              <span class="curse-text">Haven't won after leading by 2+</span>
+              <span class="curse-severity">█████</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- EMPTY STATE -->
+      <section class="page-section">
+        <div class="section-header">
+          <h2 class="section-title">Empty State</h2>
+          <div class="section-line"></div>
+        </div>
+
+        <div class="empty-state">
+          <div class="empty-state-title">WATCHING</div>
+          <div class="empty-state-dots">
+            <div class="empty-state-dot"></div>
+            <div class="empty-state-dot"></div>
+            <div class="empty-state-dot"></div>
+          </div>
+          <p class="empty-state-text">No misfortune yet.</p>
+        </div>
+      </section>
+
+      <!-- TYPOGRAPHY SHOWCASE -->
+      <section class="page-section">
+        <div class="section-header">
+          <h2 class="section-title">Typography</h2>
+          <div class="section-line"></div>
+        </div>
+
+        <div class="type-showcase">
+          <div class="type-row">
+            <span class="type-label">Display</span>
+            <span class="type-sample display" style="font-size: var(--text-hero);">DEFEATED</span>
+          </div>
+          <div class="type-row">
+            <span class="type-label">Headline</span>
+            <span class="type-sample headline" style="font-size: var(--text-headline);">Toronto Maple Leafs</span>
+          </div>
+          <div class="type-row">
+            <span class="type-label">Body</span>
+            <span class="type-sample" style="font-size: var(--text-body);">Pastrnak scores on a wrist shot from the slot.</span>
+          </div>
+          <div class="type-row">
+            <span class="type-label">Mono</span>
+            <span class="type-sample mono" style="font-size: var(--text-display);">2 — 5</span>
+          </div>
+          <div class="type-row">
+            <span class="type-label">Caption</span>
+            <span class="type-sample" style="font-size: var(--text-caption); color: var(--text-secondary);">2nd Period • 14:32</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- COLOR PALETTE -->
+      <section class="page-section">
+        <div class="section-header">
+          <h2 class="section-title">Colors</h2>
+          <div class="section-line"></div>
+        </div>
+
+        <h3 style="font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-md); text-transform: uppercase; letter-spacing: 0.1em;">Backgrounds</h3>
+        <div class="color-grid">
+          <div class="color-swatch" style="background: var(--bg-deep); border: 1px solid var(--border-visible);">
+            <span class="color-swatch-name" style="color: var(--text-secondary);">Deep</span>
+            <span class="color-swatch-value" style="color: var(--text-tertiary);">#0a0a09</span>
+          </div>
+          <div class="color-swatch" style="background: var(--bg-surface);">
+            <span class="color-swatch-name" style="color: var(--text-secondary);">Surface</span>
+            <span class="color-swatch-value" style="color: var(--text-tertiary);">#141311</span>
+          </div>
+          <div class="color-swatch" style="background: var(--bg-elevated);">
+            <span class="color-swatch-name" style="color: var(--text-secondary);">Elevated</span>
+            <span class="color-swatch-value" style="color: var(--text-tertiary);">#1c1a17</span>
+          </div>
+          <div class="color-swatch" style="background: var(--bg-spotlight);">
+            <span class="color-swatch-name" style="color: var(--text-secondary);">Spotlight</span>
+            <span class="color-swatch-value" style="color: var(--text-tertiary);">#242220</span>
+          </div>
+        </div>
+
+        <h3 style="font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-md); text-transform: uppercase; letter-spacing: 0.1em;">Text</h3>
+        <div class="color-grid">
+          <div class="color-swatch" style="background: var(--text-primary);">
+            <span class="color-swatch-name" style="color: var(--bg-deep);">Primary</span>
+            <span class="color-swatch-value" style="color: var(--bg-surface);">#f5f3ef</span>
+          </div>
+          <div class="color-swatch" style="background: var(--text-secondary);">
+            <span class="color-swatch-name" style="color: var(--bg-deep);">Secondary</span>
+            <span class="color-swatch-value" style="color: var(--bg-surface);">#a8a49c</span>
+          </div>
+          <div class="color-swatch" style="background: var(--text-tertiary);">
+            <span class="color-swatch-name" style="color: var(--bg-deep);">Tertiary</span>
+            <span class="color-swatch-value" style="color: var(--bg-surface);">#6b675f</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- LOGO CONCEPTS -->
+      <section class="page-section">
+        <div class="section-header">
+          <h2 class="section-title">Logo Concepts</h2>
+          <div class="section-line"></div>
+        </div>
+
+        <div style="display: flex; gap: var(--space-2xl); flex-wrap: wrap; align-items: flex-start;">
+          <!-- Concept 1: Bold H -->
+          <div style="text-align: center;">
+            <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: var(--space-md);">
+              <rect x="8" y="10" width="14" height="60" rx="2" fill="var(--text-primary)"/>
+              <rect x="58" y="10" width="14" height="60" rx="2" fill="var(--text-primary)"/>
+              <rect x="22" y="32" width="36" height="16" rx="2" fill="var(--text-primary)"/>
+              <!-- Goal accent -->
+              <rect x="30" y="62" width="20" height="6" rx="1" fill="var(--team-color)"/>
+            </svg>
+            <div style="font-family: var(--font-mono); font-size: var(--text-micro); color: var(--text-tertiary);">Bold H + Goal</div>
+          </div>
+
+          <!-- Concept 2: Scoreboard Style -->
+          <div style="text-align: center;">
+            <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: var(--space-md);">
+              <!-- H made of segments like LED display -->
+              <rect x="12" y="10" width="8" height="25" rx="1" fill="var(--text-primary)"/>
+              <rect x="12" y="45" width="8" height="25" rx="1" fill="var(--text-primary)"/>
+              <rect x="60" y="10" width="8" height="25" rx="1" fill="var(--text-primary)"/>
+              <rect x="60" y="45" width="8" height="25" rx="1" fill="var(--text-primary)"/>
+              <rect x="20" y="35" width="40" height="10" rx="1" fill="var(--text-primary)"/>
+              <!-- Team color dot -->
+              <circle cx="40" cy="65" r="5" fill="var(--team-color)"/>
+            </svg>
+            <div style="font-family: var(--font-mono); font-size: var(--text-micro); color: var(--text-tertiary);">LED Scoreboard</div>
+          </div>
+
+          <!-- Concept 3: Minimal -->
+          <div style="text-align: center;">
+            <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: var(--space-md);">
+              <rect x="15" y="15" width="10" height="50" rx="2" fill="var(--text-primary)"/>
+              <rect x="55" y="15" width="10" height="50" rx="2" fill="var(--text-primary)"/>
+              <rect x="25" y="33" width="30" height="14" rx="2" fill="var(--team-color)"/>
+            </svg>
+            <div style="font-family: var(--font-mono); font-size: var(--text-micro); color: var(--text-tertiary);">Minimal Color Bar</div>
+          </div>
+
+          <!-- Concept 4: Stencil -->
+          <div style="text-align: center;">
+            <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: var(--space-md);">
+              <!-- Outer shape -->
+              <path d="M10 10 H30 V35 H50 V10 H70 V70 H50 V45 H30 V70 H10 V10Z" fill="var(--text-primary)"/>
+              <!-- Inner cutouts for stencil effect -->
+              <rect x="18" y="18" width="4" height="12" fill="var(--bg-deep)"/>
+              <rect x="18" y="50" width="4" height="12" fill="var(--bg-deep)"/>
+              <rect x="58" y="18" width="4" height="12" fill="var(--bg-deep)"/>
+              <rect x="58" y="50" width="4" height="12" fill="var(--bg-deep)"/>
+            </svg>
+            <div style="font-family: var(--font-mono); font-size: var(--text-micro); color: var(--text-tertiary);">Stencil Cut</div>
+          </div>
+        </div>
+
+        <!-- Wordmark -->
+        <div style="margin-top: var(--space-2xl);">
+          <div style="font-family: var(--font-display); font-size: 3rem; letter-spacing: 0.2em; color: var(--text-primary);">
+            HOCKE<span style="color: var(--team-color);">I</span>
+          </div>
+          <div style="font-family: var(--font-mono); font-size: var(--text-micro); color: var(--text-tertiary); margin-top: var(--space-sm);">
+            Wordmark with accent on final I
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!--
+    Note: Team colors are set per-card via inline CSS custom properties.
+    Example: style="--team-color: #023ba6; --team-color-dim: rgba(2, 59, 166, 0.12);"
+
+    This allows multiple rivals with different colors in the same feed.
+    The app chrome (nav, buttons) stays neutral.
+  -->
+</body>
+</html>

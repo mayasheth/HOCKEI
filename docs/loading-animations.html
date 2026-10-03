@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loading Button Animations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-arena: #060810;
+      --bg-surface: #0b0e18;
+      --bg-elevated: #121622;
+      --text-primary: #e8ecf4;
+      --text-secondary: #8d95a8;
+      --text-tertiary: #525a6b;
+      --border-subtle: rgba(232, 236, 244, 0.06);
+      --border-visible: rgba(232, 236, 244, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--bg-arena);
+      color: var(--text-primary);
+      padding: 40px;
+      min-height: 100vh;
+    }
+
+    h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
+    }
+
+    .subtitle {
+      color: var(--text-tertiary);
+      margin-bottom: 40px;
+      font-size: 0.8rem;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      max-width: 900px;
+    }
+
+    .option-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .option-name {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+      text-transform: uppercase;
+    }
+
+    /* Base button style */
+    .load-more-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: auto;
+      padding: 10px 24px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    /* ==========================================
+       1. ANIMATED DOTS
+       ========================================== */
+    .btn-dots .dots {
+      display: inline-flex;
+      gap: 2px;
+    }
+
+    .btn-dots .dot {
+      animation: dotFade 1.4s infinite;
+      opacity: 0;
+    }
+
+    .btn-dots .dot:nth-child(1) { animation-delay: 0s; }
+    .btn-dots .dot:nth-child(2) { animation-delay: 0.2s; }
+    .btn-dots .dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes dotFade {
+      0%, 20% { opacity: 0; }
+      40%, 100% { opacity: 1; }
+    }
+
+    /* ==========================================
+       2. PULSING OPACITY
+       ========================================== */
+    .btn-pulse {
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* ==========================================
+       3. SPINNING ICON
+       ========================================== */
+    .btn-spinner .spinner {
+      width: 12px;
+      height: 12px;
+      border: 2px solid var(--text-tertiary);
+      border-top-color: var(--text-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ==========================================
+       4. SHIMMER EFFECT
+       ========================================== */
+    .btn-shimmer {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-shimmer::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.1),
+        transparent
+      );
+      animation: shimmer 1.5s infinite;
+    }
+
+    @keyframes shimmer {
+      to { left: 100%; }
+    }
+
+    /* ==========================================
+       5. BOUNCING DOTS
+       ========================================== */
+    .btn-bounce .dots {
+      display: inline-flex;
+      gap: 4px;
+      align-items: center;
+      height: 12px;
+    }
+
+    .btn-bounce .dot {
+      width: 4px;
+      height: 4px;
+      background: var(--text-secondary);
+      border-radius: 50%;
+      animation: bounce 1.4s ease-in-out infinite;
+    }
+
+    .btn-bounce .dot:nth-child(1) { animation-delay: 0s; }
+    .btn-bounce .dot:nth-child(2) { animation-delay: 0.16s; }
+    .btn-bounce .dot:nth-child(3) { animation-delay: 0.32s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-6px); }
+    }
+
+    /* ==========================================
+       6. EXPANDING DOTS
+       ========================================== */
+    .btn-expand .dots {
+      display: inline-flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .btn-expand .dot {
+      width: 5px;
+      height: 5px;
+      background: var(--text-secondary);
+      border-radius: 50%;
+      animation: expand 1.2s ease-in-out infinite;
+    }
+
+    .btn-expand .dot:nth-child(1) { animation-delay: 0s; }
+    .btn-expand .dot:nth-child(2) { animation-delay: 0.15s; }
+    .btn-expand .dot:nth-child(3) { animation-delay: 0.3s; }
+
+    @keyframes expand {
+      0%, 100% { transform: scale(1); opacity: 0.5; }
+      50% { transform: scale(1.5); opacity: 1; }
+    }
+
+    /* ==========================================
+       7. BORDER ANIMATION (Gradient Spin)
+       ========================================== */
+    .btn-border-spin {
+      position: relative;
+      background: var(--bg-surface);
+      border: none;
+      z-index: 1;
+    }
+
+    .btn-border-spin::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      background: conic-gradient(
+        from 0deg,
+        var(--text-tertiary),
+        var(--text-primary),
+        var(--text-tertiary)
+      );
+      border-radius: 8px;
+      z-index: -2;
+      animation: borderSpin 1.5s linear infinite;
+    }
+
+    .btn-border-spin::after {
+      content: '';
+      position: absolute;
+      inset: 1px;
+      background: var(--bg-elevated);
+      border-radius: 5px;
+      z-index: -1;
+    }
+
+    @keyframes borderSpin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ==========================================
+       8. TYPING DOTS (Ellipsis)
+       ========================================== */
+    .btn-typing::after {
+      content: '';
+      animation: typing 1.5s steps(4, end) infinite;
+    }
+
+    @keyframes typing {
+      0% { content: ''; }
+      25% { content: '.'; }
+      50% { content: '..'; }
+      75% { content: '...'; }
+      100% { content: ''; }
+    }
+
+    /* ==========================================
+       9. WAVE BARS
+       ========================================== */
+    .btn-wave .bars {
+      display: inline-flex;
+      gap: 3px;
+      align-items: center;
+      height: 14px;
+    }
+
+    .btn-wave .bar {
+      width: 3px;
+      height: 8px;
+      background: var(--text-secondary);
+      border-radius: 2px;
+      animation: wave 1s ease-in-out infinite;
+    }
+
+    .btn-wave .bar:nth-child(1) { animation-delay: 0s; }
+    .btn-wave .bar:nth-child(2) { animation-delay: 0.1s; }
+    .btn-wave .bar:nth-child(3) { animation-delay: 0.2s; }
+    .btn-wave .bar:nth-child(4) { animation-delay: 0.3s; }
+
+    @keyframes wave {
+      0%, 100% { height: 8px; }
+      50% { height: 14px; }
+    }
+
+    /* ==========================================
+       10. ORBIT DOTS
+       ========================================== */
+    .btn-orbit .orbit-container {
+      position: relative;
+      width: 16px;
+      height: 16px;
+    }
+
+    .btn-orbit .orbit-dot {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: var(--text-secondary);
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      margin: -2px;
+      animation: orbit 1s linear infinite;
+    }
+
+    .btn-orbit .orbit-dot:nth-child(1) { animation-delay: 0s; }
+    .btn-orbit .orbit-dot:nth-child(2) { animation-delay: 0.25s; opacity: 0.7; }
+    .btn-orbit .orbit-dot:nth-child(3) { animation-delay: 0.5s; opacity: 0.4; }
+
+    @keyframes orbit {
+      from { transform: rotate(0deg) translateX(6px) rotate(0deg); }
+      to { transform: rotate(360deg) translateX(6px) rotate(-360deg); }
+    }
+  </style>
+</head>
+<body>
+  <h1>LOADING BUTTON ANIMATIONS</h1>
+  <p class="subtitle">Click to toggle between "Load More" and loading state</p>
+
+  <div class="options-grid">
+    <!-- 1. Animated Dots -->
+    <div class="option-card">
+      <div class="option-name">1. Animated Dots</div>
+      <button class="load-more-btn btn-dots" onclick="this.classList.toggle('loading')">
+        <span class="label">Loading</span>
+        <span class="dots"><span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>
+      </button>
+    </div>
+
+    <!-- 2. Pulsing Opacity -->
+    <div class="option-card">
+      <div class="option-name">2. Pulsing Opacity</div>
+      <button class="load-more-btn btn-pulse">Loading</button>
+    </div>
+
+    <!-- 3. Spinning Icon -->
+    <div class="option-card">
+      <div class="option-name">3. Spinner Icon</div>
+      <button class="load-more-btn btn-spinner">
+        <span class="spinner"></span>
+        <span>Loading</span>
+      </button>
+    </div>
+
+    <!-- 4. Shimmer Effect -->
+    <div class="option-card">
+      <div class="option-name">4. Shimmer Effect</div>
+      <button class="load-more-btn btn-shimmer">Loading</button>
+    </div>
+
+    <!-- 5. Bouncing Dots -->
+    <div class="option-card">
+      <div class="option-name">5. Bouncing Dots</div>
+      <button class="load-more-btn btn-bounce">
+        <span>Loading</span>
+        <span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>
+      </button>
+    </div>
+
+    <!-- 6. Expanding Dots -->
+    <div class="option-card">
+      <div class="option-name">6. Expanding Dots</div>
+      <button class="load-more-btn btn-expand">
+        <span>Loading</span>
+        <span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>
+      </button>
+    </div>
+
+    <!-- 7. Border Spin -->
+    <div class="option-card">
+      <div class="option-name">7. Border Gradient Spin</div>
+      <button class="load-more-btn btn-border-spin">Loading</button>
+    </div>
+
+    <!-- 8. Typing Dots -->
+    <div class="option-card">
+      <div class="option-name">8. Typing Ellipsis</div>
+      <button class="load-more-btn btn-typing">Loading</button>
+    </div>
+
+    <!-- 9. Wave Bars -->
+    <div class="option-card">
+      <div class="option-name">9. Wave Bars</div>
+      <button class="load-more-btn btn-wave">
+        <span class="bars">
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+        </span>
+        <span>Loading</span>
+      </button>
+    </div>
+
+    <!-- 10. Orbit Dots -->
+    <div class="option-card">
+      <div class="option-name">10. Orbit Dots</div>
+      <button class="load-more-btn btn-orbit">
+        <span class="orbit-container">
+          <span class="orbit-dot"></span>
+          <span class="orbit-dot"></span>
+          <span class="orbit-dot"></span>
+        </span>
+        <span>Loading</span>
+      </button>
+    </div>
+  </div>
+</body>
+</html>

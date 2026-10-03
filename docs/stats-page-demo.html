@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stats Page Design Options</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-arena: #060810;
+      --bg-surface: #0b0e18;
+      --bg-elevated: #121622;
+      --text-primary: #e8ecf4;
+      --text-secondary: #8d95a8;
+      --text-tertiary: #525a6b;
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-visible: rgba(255, 255, 255, 0.12);
+      --accent-red: #E53935;
+      --font-display: 'Bebas Neue', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-arena);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .demo-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .demo-title {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      letter-spacing: 0.1em;
+      text-align: center;
+      margin-bottom: 40px;
+      color: var(--text-secondary);
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      gap: 40px;
+    }
+
+    .option {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .option-header {
+      padding: 16px 20px;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .option-label {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--accent-red);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .option-name {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      letter-spacing: 0.05em;
+      color: var(--text-primary);
+    }
+
+    .option-content {
+      padding: 20px;
+      max-height: 800px;
+      overflow-y: auto;
+    }
+
+    /* =========================================
+       OPTION 1: Intel Dossier
+       ========================================= */
+
+    .intel-page {
+      max-width: 600px;
+    }
+
+    .intel-header {
+      margin-bottom: 24px;
+    }
+
+    .intel-title {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      letter-spacing: 0.1em;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .intel-subtitle {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-tertiary);
+      letter-spacing: 0.05em;
+    }
+
+    .intel-section {
+      margin-bottom: 20px;
+    }
+
+    .intel-section-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 12px;
+    }
+
+    .intel-section-header::before {
+      content: '';
+      width: 2px;
+      height: 12px;
+      background: var(--text-tertiary);
+      border-radius: 1px;
+    }
+
+    .intel-section-header.live::before {
+      background: #22c55e;
+      box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+      animation: pulse-glow 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .intel-section-label {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+    }
+
+    /* Team Dossier Card */
+    .dossier-card {
+      background: var(--bg-arena);
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .dossier-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .dossier-logo {
+      width: 36px;
+      height: 36px;
+      background: var(--bg-surface);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: var(--text-tertiary);
+    }
+
+    .dossier-info {
+      flex: 1;
+    }
+
+    .dossier-name {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+
+    .dossier-context {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: var(--text-tertiary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dossier-badge {
+      font-family: var(--font-mono);
+      font-size: 0.55rem;
+      font-weight: 600;
+      padding: 2px 6px;
+      background: rgba(229, 57, 53, 0.15);
+      color: var(--accent-red);
+      border-radius: 2px;
+      letter-spacing: 0.05em;
+    }
+
+    .dossier-stats {
+      padding: 8px 12px;
+    }
+
+    .dossier-stat-group {
+      margin-bottom: 8px;
+    }
+
+    .dossier-stat-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .dossier-stat-label {
+      font-family: var(--font-mono);
+      font-size: 0.55rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--accent-red);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .stat-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      background: var(--bg-surface);
+      border-radius: 3px;
+      margin-bottom: 4px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .stat-row:hover {
+      background: var(--bg-elevated);
+    }
+
+    .stat-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .stat-text {
+      flex: 1;
+      font-size: 0.8rem;
+      color: var(--text-primary);
+    }
+
+    .stat-severity {
+      display: flex;
+      gap: 2px;
+    }
+
+    .severity-pip {
+      width: 4px;
+      height: 12px;
+      background: var(--border-visible);
+      border-radius: 1px;
+    }
+
+    .severity-pip.active {
+      background: var(--accent-red);
+    }
+
+    .severity-pip.active.low {
+      background: #f59e0b;
+    }
+
+    .stat-expand {
+      width: 16px;
+      height: 16px;
+      color: var(--text-tertiary);
+      transition: transform 0.2s ease;
+    }
+
+    .stat-row.expanded .stat-expand {
+      transform: rotate(180deg);
+    }
+
+    .stat-evidence {
+      display: none;
+      padding: 8px 10px;
+      margin-top: 4px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 3px;
+      border-left: 2px solid var(--border-visible);
+    }
+
+    .stat-evidence.open {
+      display: block;
+    }
+
+    .evidence-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+    }
+
+    .evidence-date {
+      color: var(--text-tertiary);
+    }
+
+    .evidence-result {
+      color: var(--text-secondary);
+    }
+
+    .evidence-result.loss {
+      color: var(--accent-red);
+    }
+
+    .dossier-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 12px;
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      border-top: 1px solid var(--border-subtle);
+      transition: color 0.15s ease;
+    }
+
+    .dossier-toggle:hover {
+      color: var(--text-secondary);
+    }
+
+    .dossier-toggle svg {
+      width: 10px;
+      height: 10px;
+      transition: transform 0.2s ease;
+    }
+
+    .dossier-toggle.open svg {
+      transform: rotate(180deg);
+    }
+
+    .dossier-more {
+      display: none;
+      padding: 0 12px 12px;
+    }
+
+    .dossier-more.open {
+      display: block;
+    }
+
+    /* =========================================
+       OPTION 2: Minimal Data Grid
+       ========================================= */
+
+    .grid-page {
+      max-width: 600px;
+    }
+
+    .grid-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .grid-title {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      letter-spacing: 0.1em;
+      color: var(--text-primary);
+    }
+
+    .grid-subtitle {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: var(--text-tertiary);
+      letter-spacing: 0.03em;
+    }
+
+    .grid-section {
+      margin-bottom: 32px;
+    }
+
+    .grid-section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .grid-section-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-tertiary);
+    }
+
+    .grid-section-dot.live {
+      background: #22c55e;
+      box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+      animation: pulse-glow 2s ease-in-out infinite;
+    }
+
+    .grid-section-label {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+    }
+
+    /* Team Block */
+    .team-block {
+      margin-bottom: 20px;
+    }
+
+    .team-block:last-child {
+      margin-bottom: 0;
+    }
+
+    .team-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 8px;
+    }
+
+    .team-logo-small {
+      width: 28px;
+      height: 28px;
+      background: var(--bg-surface);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 0.55rem;
+      font-weight: 600;
+      color: var(--text-tertiary);
+    }
+
+    .team-details {
+      flex: 1;
+    }
+
+    .team-name-small {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .team-context-small {
+      font-family: var(--font-mono);
+      font-size: 0.55rem;
+      color: var(--text-tertiary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .team-badge-small {
+      font-size: 0.5rem;
+      font-weight: 600;
+      padding: 1px 4px;
+      background: rgba(229, 57, 53, 0.15);
+      color: var(--accent-red);
+      border-radius: 2px;
+    }
+
+    .stats-table {
+      width: 100%;
+    }
+
+    .stats-table-row {
+      display: grid;
+      grid-template-columns: 1fr 60px 20px;
+      gap: 8px;
+      align-items: center;
+      padding: 6px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .stats-table-row:hover {
+      background: var(--bg-surface);
+    }
+
+    .stats-table-row.relevant {
+      background: rgba(229, 57, 53, 0.04);
+      border-left: 2px solid var(--accent-red);
+      padding-left: 6px;
+    }
+
+    .stats-table-text {
+      font-size: 0.75rem;
+      color: var(--text-primary);
+    }
+
+    .stats-table-severity {
+      display: flex;
+      justify-content: flex-end;
+      gap: 2px;
+    }
+
+    .mini-bar {
+      width: 8px;
+      height: 3px;
+      background: var(--border-visible);
+      border-radius: 1px;
+    }
+
+    .mini-bar.active {
+      background: var(--accent-red);
+    }
+
+    .stats-table-arrow {
+      width: 12px;
+      height: 12px;
+      color: var(--text-tertiary);
+      justify-self: end;
+    }
+
+    .more-stats-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 0;
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      transition: color 0.15s ease;
+    }
+
+    .more-stats-btn:hover {
+      color: var(--text-secondary);
+    }
+
+    .more-stats-btn svg {
+      width: 10px;
+      height: 10px;
+    }
+
+    /* Empty / Loading States */
+    .empty-state, .loading-state {
+      padding: 60px 20px;
+      text-align: center;
+    }
+
+    .loading-spinner {
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--border-visible);
+      border-top-color: var(--text-secondary);
+      border-radius: 50%;
+      margin: 0 auto 16px;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-tertiary);
+    }
+
+    .empty-text {
+      font-size: 0.85rem;
+      color: var(--text-tertiary);
+      margin-bottom: 16px;
+    }
+
+    .empty-link {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      padding: 8px 16px;
+      background: transparent;
+      border: 1px solid var(--border-visible);
+      border-radius: 4px;
+      color: var(--text-tertiary);
+      text-decoration: none;
+      text-transform: uppercase;
+      transition: all 0.2s ease;
+    }
+
+    .empty-link:hover {
+      border-color: var(--text-tertiary);
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-container">
+    <h1 class="demo-title">Stats Page Design Options</h1>
+
+    <div class="options-grid">
+      <!-- Option 1: Intel Dossier -->
+      <div class="option">
+        <div class="option-header">
+          <div class="option-label">Option 1</div>
+          <div class="option-name">Intel Dossier</div>
+        </div>
+        <div class="option-content">
+          <div class="intel-page">
+            <div class="intel-header">
+              <h1 class="intel-title">UNBIASED STATISTICS</h1>
+              <p class="intel-subtitle">Objective analysis of rival performance patterns</p>
+            </div>
+
+            <!-- Playing Today Section -->
+            <div class="intel-section">
+              <div class="intel-section-header live">
+                <span class="intel-section-label">Playing Today</span>
+              </div>
+
+              <div class="dossier-card">
+                <div class="dossier-header">
+                  <div class="dossier-logo">TOR</div>
+                  <div class="dossier-info">
+                    <div class="dossier-name">Toronto Maple Leafs</div>
+                    <div class="dossier-context">
+                      <span>vs BOS • 7:00 PM</span>
+                      <span class="dossier-badge">B2B</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="dossier-stats">
+                  <div class="dossier-stat-group">
+                    <div class="dossier-stat-label">Relevant to tonight</div>
+                    <div class="stat-row">
+                      <span class="stat-text">0-4 vs Boston this season</span>
+                      <div class="stat-severity">
+                        <div class="severity-pip active"></div>
+                        <div class="severity-pip active"></div>
+                        <div class="severity-pip active"></div>
+                        <div class="severity-pip active"></div>
+                        <div class="severity-pip active"></div>
+                      </div>
+                      <svg class="stat-expand" viewBox="0 0 12 12" fill="none" stroke="currentColor">
+                        <path d="M2 4 L6 8 L10 4" stroke-width="1.5" stroke-linecap="round"/>
+                      </svg>
+                    </div>
+                    <div class="stat-row">
+                      <span class="stat-text">1-6 on back-to-backs</span>
+                      <div class="stat-severity">
+                        <div class="severity-pip active"></div>
+                        <div class="severity-pip active"></div>
+                        <div class="severity-pip active"></div>
+                        <div class="severity-pip active"></div>
+                        <div class="severity-pip"></div>
+                      </div>
+                      <svg class="stat-expand" viewBox="0 0 12 12" fill="none" stroke="currentColor">
+                        <path d="M2 4 L6 8 L10 4" stroke-width="1.5" stroke-linecap="round"/>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+                <div class="dossier-toggle">
+                  <svg viewBox="0 0 12 12" fill="none" stroke="currentColor">
+                    <path d="M2 4 L6 8 L10 4" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                  <span>3 more stats</span>
+                </div>
+                <div class="dossier-more">
+                  <div class="stat-row">
+                    <span class="stat-text">12 games without a shutout</span>
+                    <div class="stat-severity">
+                      <div class="severity-pip active low"></div>
+                      <div class="severity-pip active low"></div>
+                      <div class="severity-pip"></div>
+                      <div class="severity-pip"></div>
+                      <div class="severity-pip"></div>
+                    </div>
+                    <svg class="stat-expand" viewBox="0 0 12 12" fill="none" stroke="currentColor">
+                      <path d="M2 4 L6 8 L10 4" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Not Playing Section -->
+            <div class="intel-section">
+              <div class="intel-section-header">
+                <span class="intel-section-label">All the rest</span>
+              </div>
+
+              <div class="dossier-card">
+                <div class="dossier-header">
+                  <div class="dossier-logo">MTL</div>
+                  <div class="dossier-info">
+                    <div class="dossier-name">Montréal Canadiens</div>
+                    <div class="dossier-context">
+                      <span>Next game: Tomorrow vs NYR</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="dossier-toggle" style="border-top: none;">
+                  <svg viewBox="0 0 12 12" fill="none" stroke="currentColor">
+                    <path d="M2 4 L6 8 L10 4" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                  <span>See 4 stats</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Option 2: Minimal Data Grid -->
+      <div class="option">
+        <div class="option-header">
+          <div class="option-label">Option 2</div>
+          <div class="option-name">Minimal Data Grid</div>
+        </div>
+        <div class="option-content">
+          <div class="grid-page">
+            <div class="grid-header">
+              <div>
+                <h1 class="grid-title">UNBIASED STATISTICS</h1>
+                <p class="grid-subtitle">Objective analysis of rival performance patterns</p>
+              </div>
+            </div>
+
+            <!-- Playing Today Section -->
+            <div class="grid-section">
+              <div class="grid-section-header">
+                <div class="grid-section-dot live"></div>
+                <span class="grid-section-label">Playing Today</span>
+              </div>
+
+              <div class="team-block">
+                <div class="team-header">
+                  <div class="team-logo-small">TOR</div>
+                  <div class="team-details">
+                    <div class="team-name-small">Toronto Maple Leafs</div>
+                    <div class="team-context-small">
+                      <span>vs BOS • 7:00 PM</span>
+                      <span class="team-badge-small">B2B</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="stats-table">
+                  <div class="stats-table-row relevant">
+                    <span class="stats-table-text">0-4 vs Boston this season</span>
+                    <div class="stats-table-severity">
+                      <div class="mini-bar active"></div>
+                      <div class="mini-bar active"></div>
+                      <div class="mini-bar active"></div>
+                      <div class="mini-bar active"></div>
+                      <div class="mini-bar active"></div>
+                    </div>
+                    <svg class="stats-table-arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor">
+                      <path d="M4 2 L8 6 L4 10" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <div class="stats-table-row relevant">
+                    <span class="stats-table-text">1-6 on back-to-backs</span>
+                    <div class="stats-table-severity">
+                      <div class="mini-bar active"></div>
+                      <div class="mini-bar active"></div>
+                      <div class="mini-bar active"></div>
+                      <div class="mini-bar active"></div>
+                      <div class="mini-bar"></div>
+                    </div>
+                    <svg class="stats-table-arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor">
+                      <path d="M4 2 L8 6 L4 10" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <div class="more-stats-btn">
+                    <svg viewBox="0 0 12 12" fill="none" stroke="currentColor">
+                      <path d="M2 4 L6 8 L10 4" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                    <span>3 more stats</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Not Playing Section -->
+            <div class="grid-section">
+              <div class="grid-section-header">
+                <div class="grid-section-dot"></div>
+                <span class="grid-section-label">All the rest</span>
+              </div>
+
+              <div class="team-block">
+                <div class="team-header">
+                  <div class="team-logo-small">MTL</div>
+                  <div class="team-details">
+                    <div class="team-name-small">Montréal Canadiens</div>
+                    <div class="team-context-small">
+                      <span>Next game: Tomorrow vs NYR</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="stats-table">
+                  <div class="more-stats-btn">
+                    <svg viewBox="0 0 12 12" fill="none" stroke="currentColor">
+                      <path d="M2 4 L6 8 L10 4" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                    <span>See 4 stats</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="team-block">
+                <div class="team-header">
+                  <div class="team-logo-small">BUF</div>
+                  <div class="team-details">
+                    <div class="team-name-small">Buffalo Sabres</div>
+                    <div class="team-context-small">
+                      <span>Next game: Sat vs DET</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="stats-table">
+                  <div class="more-stats-btn">
+                    <svg viewBox="0 0 12 12" fill="none" stroke="currentColor">
+                      <path d="M2 4 L6 8 L10 4" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                    <span>See 2 stats</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Loading State Example -->
+            <div style="margin-top: 40px; padding-top: 20px; border-top: 1px dashed var(--border-visible);">
+              <div class="grid-section-label" style="margin-bottom: 12px;">Loading State</div>
+              <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Computing stats...</div>
+              </div>
+            </div>
+
+            <!-- Empty State Example -->
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--border-visible);">
+              <div class="grid-section-label" style="margin-bottom: 12px;">Empty State</div>
+              <div class="empty-state">
+                <p class="empty-text">No rivals selected</p>
+                <a href="#" class="empty-link">Select Rivals</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
