@@ -1,6 +1,8 @@
 // Serverless proxy for NHL API to avoid CORS issues
 // Handles all requests to /api/nhl/*
 
+import { UA } from '../../../lib/server/nhl.js';
+
 const NHL_BASE_URL = 'https://api-web.nhle.com/v1';
 
 export async function GET({ params }) {
@@ -8,7 +10,8 @@ export async function GET({ params }) {
   const url = `${NHL_BASE_URL}/${path}`;
 
   try {
-    const response = await fetch(url);
+    // api-web.nhle.com returns 403 without a browser User-Agent.
+    const response = await fetch(url, { headers: { 'User-Agent': UA } });
 
     if (!response.ok) {
       return new Response(JSON.stringify({ error: 'NHL API error' }), {
