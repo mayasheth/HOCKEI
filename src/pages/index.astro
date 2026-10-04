@@ -19,7 +19,7 @@ import Layout from "../layouts/Layout.astro";
     </main>
     <aside>
       <section class="ag" aria-labelledby="nextH"><div class="kick" id="nextH">Next</div><div id="next" style="display:flex;flex-direction:column;gap:10px"></div></section>
-      <section class="ag" style="color:var(--mu);font-size:13px"><div class="kick" style="color:var(--ink)">About the drawings</div>Each drawing is the 14 seconds before a goal against, from NHL tracking data. The two-colour line is the puck, in the rival’s colours. Grey lines are the skaters: brighter for the scoring team, fainter for your rival.</section>
+      <section class="ag" style="color:var(--mu);font-size:13px"><div class="kick" style="color:var(--ink)">About the drawings</div>The 14 seconds before each goal against, from NHL tracking data. The coloured line is the puck. The grey lines are the skaters.</section>
     </aside>
   </div>
 </Layout>
@@ -29,6 +29,7 @@ import Layout from "../layouts/Layout.astro";
   import { summaryEl } from "../lib/ui/render.js";
   import { startLive } from "../lib/ui/live.js";
   import { esc } from "../lib/ui/pen.js";
+  import { chip } from "../lib/teams.js";
 
   const PAGE = 6;
   const rivals = [...getSelectedRivals()].sort();
@@ -90,10 +91,10 @@ import Layout from "../layouts/Layout.astro";
       try {
         nextGames = await (await fetch(`/api/next?rivals=${rivals.join(",")}`)).json();
       } catch { nextGames = []; }
-      const day = (iso: string) => new Date(iso).toLocaleDateString("en-US", { weekday: "long" });
+      const day = (iso: string) => new Date(iso).toLocaleDateString("en-US", { weekday: "short" });
       const time = (iso: string) => new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
       document.getElementById("next")!.innerHTML = nextGames.length
-        ? nextGames.map((n) => `<div><p style="margin:0"><b>${day(n.startUTC)}</b> · ${n.rival} ${n.home ? "vs" : "at"} ${n.opp} · ${time(n.startUTC)}</p>${n.facts.map((f: string) => `<p style="margin:0;color:var(--mu)">${esc(f)}</p>`).join("")}</div>`).join("")
+        ? nextGames.map((n) => `<div class="nx" style="--c:${chip(n.rival)}"><div class="mono">${day(n.startUTC)} · ${time(n.startUTC)}</div><p class="m"><b>${n.rival}</b> ${n.home ? "vs" : "at"} <span class="op">${n.opp}</span></p>${n.facts.map((f: string) => `<p class="f">${esc(f)}</p>`).join("")}</div>`).join("")
         : '<p style="margin:0;color:var(--mu)">No games scheduled.</p>';
     }
 

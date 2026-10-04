@@ -65,6 +65,13 @@ aside .kick { padding-bottom: 6px; border-bottom: 3px solid var(--ink); margin-b
 @keyframes blink { 50% { opacity: .25; } }
 .idle { display: flex; flex-direction: column; gap: 6px; }
 
+/* Next panel: each rival's next game, edged in its ink */
+.nx { display: flex; flex-direction: column; gap: 3px; padding: 2px 0 2px 12px; border-left: 3px solid var(--c); }
+.nx .m { margin: 0; font-family: var(--agate); font-size: 18px; }
+.nx .m b { color: var(--c); }
+.nx .op { color: var(--ink2); }
+.nx .f { margin: 0; color: var(--mu); }
+
 /* Skater trails */
 figure.draw { margin: 0; position: relative; }
 figure.draw svg { display: block; width: 100%; height: auto; overflow: hidden; }
