@@ -1,6 +1,6 @@
 // Rival game data from the NHL API: schedules, per-game scoring sheets, and the fact engine.
 import { api, cached, isFinal, isLive } from "./nhl.js";
-import { factsFor, nextFacts } from "../facts.js";
+import { factsFor, nextFacts, FACTS_VERSION } from "../facts.js";
 
 const tmin = (per, clock) => {
   const [m, s] = clock.split(":").map(Number);
@@ -109,7 +109,7 @@ const kickerFor = (row, rows) => {
 
 // A finished rival game, ready to render: scoring sheet, kicker, and up to four facts.
 export async function finishedGame(team, id) {
-  return cached(`game:${team}:${id}`, Infinity, async () => {
+  return cached(`game:v${FACTS_VERSION}:${team}:${id}`, Infinity, async () => {
     const sch = await schedule(team);
     const idx = sch.rows.findIndex((r) => r.id === id);
     const row = sch.rows[idx], d = await detail(id, team);
