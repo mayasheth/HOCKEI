@@ -80,6 +80,24 @@ export async function detail(id, team) {
   };
 }
 
+// The rival goalie who faced the most shots, with his save percentage and the last time
+// (as a starter facing 10+ shots) he did as badly or worse. lowestSince: a date, null if never
+// in the window, "" if it happened within his last 10 starts (not worth saying).
+async function goalieLine(id, team, date, seasons) {
+  const box = await cached(`box:${id}`, Infinity, () => api(`gamecenter/${id}/boxscore`, 60));
+  const side = box.homeTeam.abbrev === team ? "homeTeam" : "awayTeam";
+  const g = [...(box.playerByGameStats?.[side]?.goalies || [])].sort((a, b) => (b.shotsAgainst || 0) - (a.shotsAgainst || 0))[0];
+  if (!g || !g.shotsAgainst) return null;
+  const sv = g.saves / g.shotsAgainst;
+  const logs = await Promise.all(seasons.map((s) => api(`player/${g.playerId}/game-log/${s}/2`, 86400).then((d) => d.gameLog || []).catch(() => [])));
+  const starts = logs.flat().filter((x) => x.gamesStarted && x.shotsAgainst >= 10 && x.gameDate < date).sort((a, b) => b.gameDate.localeCompare(a.gameDate));
+  const k = starts.findIndex((x) => x.savePctg <= sv);
+  return {
+    name: g.name.default.replace(/^.*?\.\s*/, ""), sv, saves: g.saves, shots: g.shotsAgainst,
+    lowestSince: k === -1 ? (starts.length >= 10 ? null : "") : k >= 10 ? starts[k].gameDate : "",
+  };
+}
+
 const kickerFor = (row, rows) => {
   const parts = ["Final" + (row.lp === "OT" ? " · OT" : row.lp === "SO" ? " · SO" : "")];
   const season = rows.filter((r) => r.season === row.season && r.gameType === 2);
@@ -99,7 +117,8 @@ export async function finishedGame(team, id) {
     // Previous meetings with this opponent, for "goals vs" facts.
     const meetings = upto.filter((r) => r.opp === row.opp).slice(-8);
     const vs = await Promise.all(meetings.map((r) => (r.id === id ? d : detail(r.id, team))));
-    const { stats, deck } = factsFor({ team, row, upto, detail: d, vs, since: sch.previous || sch.current });
+    const goalie = await goalieLine(id, team, row.date, [sch.previous, sch.current].filter(Boolean)).catch(() => null);
+    const { stats, deck } = factsFor({ team, row, upto, detail: d, vs, since: sch.previous || sch.current, goalie });
     return {
       key: `${team}-${id}`, id, rival: team, opp: row.opp, date: row.date, kicker: kickerFor(row, sch.rows),
       rs: d.rs, os: d.os, goals: d.goals.map(({ before, scorerId, goalie, ...g }) => g), ours: d.ours, stats, deck,

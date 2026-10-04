@@ -36,7 +36,7 @@ function weekdayDrought(rows, iso) {
 }
 const shortDate = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 
-export function factsFor({ team, row, upto, detail, vs, since }) {
+export function factsFor({ team, row, upto, detail, vs, since, goalie }) {
   const out = [], lost = row.res !== "W", S = seasonLabel(since);
   const add = (big, l, s = "") => out.push({ big: String(big), l, s });
   const goals = detail.goals;
@@ -56,10 +56,12 @@ export function factsFor({ team, row, upto, detail, vs, since }) {
     else if (prior.length - prior.indexOf(prev) >= 15) add(row.ga, "Goals against", `Most since ${shortDate(prev.date)}`);
   }
 
-  const gl = new Map();
-  goals.filter((g) => g.goalie && g.tag !== "EN").forEach((g) => gl.set(g.goalie, (gl.get(g.goalie) || 0) + 1));
-  const [goalie, k] = [...gl.entries()].sort((a, b) => b[1] - a[1])[0] || [];
-  if (lost && k >= 3) add(`${k}/${row.ga}`, `Allowed by ${goalie}`);
+  // The rival's main goalie, when his save percentage was poor: ".815" with saves on shots, or how long since he was this bad.
+  if (lost && goalie && goalie.shots >= 10 && goalie.sv < 0.88) {
+    const sv = goalie.sv.toFixed(3).replace(/^0/, "");
+    const low = goalie.lowestSince === null ? `His lowest since ${S}` : goalie.lowestSince ? `His lowest since ${shortDate(goalie.lowestSince)}` : "";
+    add(sv, `Save percentage, ${goalie.name}`, low || `${goalie.saves} saves on ${goalie.shots} shots`);
+  }
 
   const ts = goals.map((g) => g.t).sort((a, b) => a - b);
   if (ts.length >= 3) {

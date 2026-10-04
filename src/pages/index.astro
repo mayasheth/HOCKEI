@@ -50,7 +50,7 @@ import Layout from "../layouts/Layout.astro";
       [...recentEl.children].forEach((c, k) => c.classList.toggle("same", k > 0 && (c as HTMLElement).dataset.date === (recentEl.children[k - 1] as HTMLElement).dataset.date));
       if (!vis.length && total === 0) recentEl.innerHTML = '<p class="ag" style="color:var(--mu);margin:0">No finished games for these rivals yet.</p>';
       const left = total - games.length;
-      moreEl.innerHTML = left > 0 ? `<button type="button" class="more" id="moreBtn">Show ${Math.min(PAGE, left)} more ${Math.min(PAGE, left) === 1 ? "game" : "games"}</button>` : "";
+      moreEl.innerHTML = left > 0 ? `<button type="button" class="more" id="moreBtn">Show more</button>` : "";
       document.getElementById("moreBtn")?.addEventListener("click", loadMore);
     }
 
