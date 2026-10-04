@@ -12,7 +12,7 @@ Dark newsprint, red editor's pen marks only on the worst events, skater-trail dr
 ```
 src/
 ├── pages/
-│   ├── index.astro          # Feed: Live (scoreboard + time-ordered goal feed) and Recent (6 games, load more); aside: Next, About
+│   ├── index.astro          # Feed: Live (scoreboard + time-ordered goal feed) and Recent games (6 at a time, load more); aside: Next, About
 │   ├── rivals.astro         # Pick rivals by division (localStorage)
 │   └── api/
 │       ├── recent.js        # ?rivals=&offset=&limit= -> finished games with facts, newest first

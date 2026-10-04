@@ -12,7 +12,7 @@ import Layout from "../layouts/Layout.astro";
     <main>
       <section class="sec" id="live" aria-label="Live"></section>
       <section class="sec" aria-labelledby="recentH">
-        <div class="kick" id="recentH">Recent</div>
+        <div class="kick" id="recentH">Recent games</div>
         <div class="recent" id="recent"></div>
         <div id="more"></div>
       </section>
@@ -45,7 +45,6 @@ import Layout from "../layouts/Layout.astro";
     function renderRecent() {
       const hide = liveCtl ? liveCtl.live() : new Set<string>();
       const vis = games.filter((g) => !hide.has(g.key));
-      document.getElementById("recentH")!.textContent = vis.length ? `Last ${vis.length} ${vis.length === 1 ? "game" : "games"}` : "Recent";
       recentEl.replaceChildren(...vis.map((g) => { if (!els.has(g.key)) els.set(g.key, summaryEl(g)); return els.get(g.key)!; }));
       // Same day as the game above: drop the repeated date, light rule.
       [...recentEl.children].forEach((c, k) => c.classList.toggle("same", k > 0 && (c as HTMLElement).dataset.date === (recentEl.children[k - 1] as HTMLElement).dataset.date));
