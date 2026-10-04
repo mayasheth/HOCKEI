@@ -27,7 +27,7 @@ export function goalContext(g, x) {
   if (inPer >= 2) out.push(`${nth(inPer)} goal against in the ${x.per <= 3 ? ["first", "second", "third"][x.per - 1] + " period" : "overtime"}.`);
   const prev = before[before.length - 1];
   if (prev && x.t - prev.t < 3) out.push(`${mmss(x.t - prev.t)} after the last one.`);
-  if (!out.length) out.push(i === 0 ? "Opening goal." : `${nth(i + 1)} goal against.`);
+  if (!out.length) out.push(i === 0 ? "Opening goal." : `${nth(i + 1)} of the night.`);
   return out.slice(0, 2).join(" ");
 }
 
@@ -97,7 +97,8 @@ export function feedCard(g, x, isNew, at, approx) {
   el.innerHTML = `<figure class="draw"></figure><div>
     <div class="kick" style="display:flex;align-items:center;gap:8px;color:var(--ink2)"><i style="width:9px;height:9px;display:block;background:${chip(g.rival)}"></i>${g.rival} vs ${g.opp}<span class="mono ago" data-at="${at}" data-approx="${approx ? 1 : 0}">${ago(at, approx)}</span></div>
     <div class="mono" style="margin-top:8px">${ORD(x.per)} · ${x.clock}${tagOf(x) ? ` · ${tagOf(x)}` : ""}</div>
-    <div class="who"><span class="pw">${esc(x.name)}${worst ? penSVG("under2", r, "left:-2px;bottom:-10px;width:calc(100% + 4px);height:10px", 2.2, isNew ? 0.9 : 0) : ""}</span></div>
+    <div class="who"><span class="pw">Goal against${worst ? penSVG("under2", r, "left:-2px;bottom:-10px;width:calc(100% + 4px);height:10px", 2.2, isNew ? 0.9 : 0) : ""}</span> <span class="whoteam">${teamName(g.rival)}</span></div>
+    <div class="by">${esc(x.name)} <span>${g.opp}</span></div>
     <p class="ctx">${esc(goalContext(g, x))}</p>
     ${z && z.sc ? `<div class="ag" style="margin-top:10px;font-weight:700">${dashed(z.sc)}</div>` : ""}</div>`;
   const dr = new GoalDrawing(g.rival, `Puck and skater paths before ${x.name}’s goal`);
