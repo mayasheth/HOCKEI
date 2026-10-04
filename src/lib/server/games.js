@@ -8,26 +8,31 @@ const tmin = (per, clock) => {
 };
 const shortClock = (c) => c.replace(/^0(\d)/, "$1");
 
+function scheduleRow(g, team) {
+  const home = g.homeTeam.abbrev === team;
+  const me = home ? g.homeTeam : g.awayTeam, op = home ? g.awayTeam : g.homeTeam;
+  const lp = g.gameOutcome?.lastPeriodType || "REG";
+  const gf = me.score ?? 0, ga = op.score ?? 0;
+  return {
+    id: g.id, season: String(g.season), gameType: g.gameType, date: g.gameDate, startUTC: g.startTimeUTC,
+    state: g.gameState, home, opp: op.abbrev, gf, ga, lp,
+    res: !isFinal(g.gameState) ? null : gf > ga ? "W" : lp === "REG" ? "L" : "O",
+  };
+}
+
 // Completed and upcoming games for one team over the current and previous season, oldest first.
+// The season schedule is cached for 5 min, so today's games are overlaid from the live scoreboard.
 export async function schedule(team) {
-  return cached(`sched:${team}`, 300, async () => {
+  const base = await cached(`sched:${team}`, 300, async () => {
     const cur = await api(`club-schedule-season/${team}/now`, 300);
     const prev = cur.previousSeason ? await api(`club-schedule-season/${team}/${cur.previousSeason}`, 86400).catch(() => ({ games: [] })) : { games: [] };
-    const rows = [...prev.games, ...cur.games]
-      .filter((g) => g.gameType === 2 || g.gameType === 3)
-      .map((g) => {
-        const home = g.homeTeam.abbrev === team;
-        const me = home ? g.homeTeam : g.awayTeam, op = home ? g.awayTeam : g.homeTeam;
-        const lp = g.gameOutcome?.lastPeriodType || "REG";
-        const gf = me.score ?? 0, ga = op.score ?? 0;
-        return {
-          id: g.id, season: String(g.season), gameType: g.gameType, date: g.gameDate, startUTC: g.startTimeUTC,
-          state: g.gameState, home, opp: op.abbrev, gf, ga, lp,
-          res: !isFinal(g.gameState) ? null : gf > ga ? "W" : lp === "REG" ? "L" : "O",
-        };
-      });
+    const rows = [...prev.games, ...cur.games].filter((g) => g.gameType === 2 || g.gameType === 3).map((g) => scheduleRow(g, team));
     return { current: String(cur.currentSeason), previous: String(cur.previousSeason || ""), rows };
   });
+  const today = await api("score/now", 10).catch(() => ({ games: [] }));
+  const fresh = new Map((today.games || []).filter((g) => g.homeTeam.abbrev === team || g.awayTeam.abbrev === team).map((g) => [g.id, g]));
+  if (!fresh.size) return base;
+  return { ...base, rows: base.rows.map((r) => (fresh.has(r.id) ? { ...scheduleRow({ ...fresh.get(r.id), season: r.season, gameType: r.gameType, gameDate: r.date }, team) } : r)) };
 }
 
 // One game's scoring sheet from the rival's side. Finished games are cached for good.
@@ -162,7 +167,7 @@ export async function next(rivals) {
   const out = [];
   for (const t of rivals) {
     const sch = await schedule(t);
-    const i = sch.rows.findIndex((r) => !r.res);
+    const i = sch.rows.findIndex((r) => r.state === "FUT" || r.state === "PRE");
     if (i < 0) continue;
     const row = sch.rows[i], done = sch.rows.slice(0, i).filter((r) => r.res);
     out.push({ rival: t, opp: row.opp, home: row.home, date: row.date, startUTC: row.startUTC, facts: nextFacts({ row, done, since: sch.previous || sch.current }) });

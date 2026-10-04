@@ -4,7 +4,7 @@
 // one-goal games, blowouts, weekday droughts).
 
 // Bump when rules change so cached game summaries are rebuilt.
-export const FACTS_VERSION = 2;
+export const FACTS_VERSION = 3;
 
 export const nth = (n) => n + (n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th");
 export const seasonLabel = (s) => `${s.slice(0, 4)}–${s.slice(6)}`;
@@ -88,7 +88,7 @@ export function factsFor({ team, row, upto, detail, vs, since, goalie }) {
 
   if (lost && Math.abs(row.gf - row.ga) === 1) {
     const { w, l } = oneGoal(upto);
-    if (w + l >= 6 && l / (w + l) >= 0.6) add(`${l}–${w}`, "In one-goal games", "Last 20 games");
+    if (w + l >= 6 && l / (w + l) >= 0.6) add(`${w}–${l}`, "Record in one-goal games", "Last 20 games");
   }
 
   const prevRow = upto[upto.length - 2];

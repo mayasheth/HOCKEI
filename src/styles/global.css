@@ -90,6 +90,7 @@ svg.pending .rink path { stroke-dasharray: 3 5; }
 .sbrow .sq { width: 9px; height: 9px; display: block; }
 .sbrow .sc { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; font-size: clamp(22px, 2.8vw, 32px); line-height: 1; }
 .sbrow .sc i { font-family: var(--serif); }
+.sbarrow { width: 58px; height: 16px; margin-left: 6px; align-self: center; }
 .vs { font-family: var(--mono); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--mu); }
 .feed { display: flex; flex-direction: column; }
 .goal { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 28px; padding: 18px 0; border-top: 1px solid var(--faint); }

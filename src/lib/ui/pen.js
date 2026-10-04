@@ -19,6 +19,8 @@ const PEN = {
   circle: ["0 0 26 26", "M16 3 C6 1 1 8 3 15 C5 23 18 25 23 17 C27 10 21 3 12 4", 1.1],
   under2: ["0 0 60 8", "M1 2 C20 1 40 2 59 2 M3 7 C22 6 40 6 57 7", 0.7],
   check: ["0 0 11 10", "M1 5.5 L4 8.6 L10 1.2", 0.5],
+  // Pointing left, at the thing it marks: shaft drawn from the tail, then the head.
+  arrow: ["0 0 60 16", "M58 9 C44 7 26 10 6 8 M14 2 C10 4 7 6 4 8 C8 10 11 12 14 14", 1],
 };
 
 export function penSVG(kind, r, box, w, delay) {

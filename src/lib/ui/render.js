@@ -123,11 +123,13 @@ export function feedCard(g, x, isNew, at, approx) {
 const flapHTML = (str) => `<span class="flap" aria-hidden="true">${[...String(str)].map((c) => `<b>${c}</b>`).join("")}</span>`;
 
 // Scoreboard row: score only while the rival trails (or lost); clock or status on the right.
-export function sbRow(g, status) {
+// A final the rival lost gets the pen: a circle on its score and an arrow pointing at the game.
+export function sbRow(g, status, animate = true) {
   const r = rng(hash(g.key + "|live"));
-  const fin = status === "Final";
+  const fin = status === "Final", delay = animate ? 0.1 : 0;
   const score = g.os > g.rs
-    ? `<i>${teamName(g.opp)}</i> ${flapHTML(g.os)} <i>${teamName(g.rival)}</i> ${fin ? circled(g.rs, r, 0.1) : flapHTML(g.rs)}<span class="sr">${teamName(g.opp)} ${g.os}, ${teamName(g.rival)} ${g.rs}</span>`
+    ? `<i>${teamName(g.opp)}</i> ${flapHTML(g.os)} <i>${teamName(g.rival)}</i> ${fin ? circled(g.rs, r, delay) : flapHTML(g.rs)}<span class="sr">${teamName(g.opp)} ${g.os}, ${teamName(g.rival)} ${g.rs}</span>`
     : `<i>${teamName(g.rival)}</i> <span class="vs">vs</span> <i>${teamName(g.opp)}</i>`;
-  return `<span class="sq" style="background:${chip(g.rival)}"></span><span class="sc">${score}</span><span class="mono">${esc(status)}</span>`;
+  const arrow = fin && g.os > g.rs ? `<span class="pw sbarrow">${penSVG("arrow", r, "left:0;top:0;width:100%;height:100%", 2.4, delay + 0.6)}</span>` : "";
+  return `<span class="sq" style="background:${chip(g.rival)}"></span><span class="sc">${score}${arrow}</span><span class="mono">${esc(status)}</span>`;
 }

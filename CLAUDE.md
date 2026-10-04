@@ -37,7 +37,7 @@ src/
 ```
 
 ## Key Behaviors
-- **Live**: polls `/api/live` every 20 s while rival games are in progress, 5 min otherwise; pauses when the tab is hidden. Goals from all games share one feed, newest first (goals scored before the page opened are ordered by estimated wall time). Goals removed on review disappear. A final lingers 90 s, then moves to Recent.
+- **Live ("Tonight")**: a scoreboard row for every rival game today (start time, live clock, `2nd INT`, Final). Finished games stay with their goals, and also join Recent (today's results are overlaid from `score/now`, so the 5-min schedule cache doesn't delay them). A final the rival lost gets a pen circle and arrow. Polls `/api/live` every 20 s while games are live or in pre-game, 5 min otherwise; pauses when hidden. Goals from all games share one feed, newest first. Goals removed on review disappear.
 - **Live cards**: text first; the drawing rolls in when tracking is published (retried each minute for 20 min). Each shows game time plus "N min ago", from when this browser first saw the goal (localStorage `hockei-goal-seen`), or "~N min ago" estimated from the start time for goals scored before the page opened.
 - **Replay for testing**: `/?replay=2026-09-29&at=40` replays that date's rival games on a compressed clock (`at` = start minute).
 - **Facts**: `facts.js` rules in priority order; the first four that apply are shown. Window is the current + previous season. Severity: SHG or a late game-winner = 60 (pen marks), PPG/ENG/winner = 40, else 35.
