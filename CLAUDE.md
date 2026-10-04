@@ -26,7 +26,7 @@ src/
 │   ├── server/nhl.js        # Server fetch with UA + in-memory TTL cache
 │   ├── server/games.js      # schedule(), detail() (play-by-play -> goals against), finishedGame(), recent(), live(), next()
 │   ├── facts.js             # Fact engine (per-game stats + pre-game facts); absorbed the old curses
-│   ├── teams.js             # 32 teams: name, division, two dark-paper inks (red-primary teams lead with next colour)
+│   ├── teams.js             # 32 teams: name, division, two dark-paper inks (main ink first)
 │   ├── store.js             # localStorage rivals
 │   └── ui/
 │       ├── draw.js          # GoalDrawing (skater trails, two-colour puck), loadTrack, frameBox
