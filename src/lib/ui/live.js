@@ -12,7 +12,7 @@ const localTime = (iso) => new Date(iso).toLocaleTimeString("en-US", { hour: "nu
 
 const status = (g) => {
   if (g.status) return g.status;
-  if (FINAL.has(g.state)) return "Final";
+  if (FINAL.has(g.state)) return g.lp === "OT" ? "Final · OT" : g.lp === "SO" ? "Final · SO" : "Final";
   if (g.state === "FUT") return localTime(g.startUTC);
   if (g.state === "PRE") return "Pre-game";
   if (g.clock?.inIntermission) return `${ORD(g.period)} INT`;
@@ -148,7 +148,7 @@ export function startLive(root, rivals, { replayDate, at = 0, onFinals, next = (
         const goals = g.goals.filter((x) => x.t <= t), ours = g.ours.filter((x) => x <= t);
         const st = c.pre ? "PRE" : c.fin ? "OFF" : "LIVE";
         const left = c.per ? (c.per <= 3 ? 20 * c.per - t : 0) : 0;
-        const label = c.pre ? "Pre-game" : c.fin ? "Final" : c.int ? `${ORD(c.int)} INT` : c.per === 4 ? `OT · ${Math.floor(65 - t)}:${String(Math.round(((65 - t) % 1) * 60) % 60).padStart(2, "0")}` : `${ORD(c.per)} · ${Math.floor(left)}:${String(Math.round((left % 1) * 60) % 60).padStart(2, "0")}`;
+        const label = c.pre ? "Pre-game" : c.fin ? (g.lp === "OT" ? "Final · OT" : g.lp === "SO" ? "Final · SO" : "Final") : c.int ? `${ORD(c.int)} INT` : c.per === 4 ? `OT · ${Math.floor(65 - t)}:${String(Math.round(((65 - t) % 1) * 60) % 60).padStart(2, "0")}` : `${ORD(c.per)} · ${Math.floor(left)}:${String(Math.round((left % 1) * 60) % 60).padStart(2, "0")}`;
         return { ...g, state: st, status: label, goals, ours, os: c.fin ? g.os : goals.length, rs: c.fin ? g.rs : ours.length };
       });
       const hold = update(frame, Date.now());

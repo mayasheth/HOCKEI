@@ -19,12 +19,17 @@ export function scoringRows(g) {
 }
 
 // One line of context for a goal, from this game's own scoring sheet.
+// Overtime is sudden death, so any overtime goal against is the winner.
+export const otWinner = (x) => x.per >= 4;
+const otTag = (r, delay) => `<span class="pw otmark">OT${penSVG("circle", r, "left:-.45em;top:-.3em;width:calc(100% + .9em);height:calc(100% + .6em)", 2, delay)}</span>`;
+
 export function goalContext(g, x) {
   const i = g.goals.indexOf(x), before = g.goals.slice(0, i), out = [];
+  if (otWinner(x)) out.push(`Overtime winner, ${x.clock} in.`);
   const own = before.filter((y) => y.name === x.name).length;
   if (own) out.push(`${x.name}’s ${nth(own + 1)} of the night.`);
   const inPer = g.goals.slice(0, i + 1).filter((y) => y.per === x.per).length;
-  if (inPer >= 2) out.push(`${nth(inPer)} goal against in the ${x.per <= 3 ? ["first", "second", "third"][x.per - 1] + " period" : "overtime"}.`);
+  if (inPer >= 2 && !otWinner(x)) out.push(`${nth(inPer)} goal against in the ${x.per <= 3 ? ["first", "second", "third"][x.per - 1] + " period" : "overtime"}.`);
   const prev = before[before.length - 1];
   if (prev && x.t - prev.t < 3) out.push(`${mmss(x.t - prev.t)} after the last one.`);
   if (!out.length) out.push(i === 0 ? "Opening goal." : `${nth(i + 1)} of the night.`);
@@ -62,7 +67,7 @@ export function summaryEl(g) {
     const dr = new GoalDrawing(g.rival, `Puck and skater paths before ${x.name}’s goal`);
     ds.push([dr, x]);
     fig.appendChild(dr.el);
-    fig.insertAdjacentHTML("beforeend", `<figcaption><span class="mono" style="font-size:11px">${ORD(x.per)} ${x.clock}${tagOf(x) ? ` · ${tagOf(x)}` : ""}</span><span class="nm"><span class="pw">${esc(x.name)}${worst ? penSVG("under2", r, "left:-2px;bottom:-7px;width:calc(100% + 4px);height:8px", 1.8, 1.2 + k * 0.12) : ""}</span></span>${z.sc ? `<span class="ag" style="font-size:13px;color:var(--mu)">${dashed(z.sc)}</span>` : ""}</figcaption>`);
+    fig.insertAdjacentHTML("beforeend", `<figcaption><span class="mono" style="font-size:11px">${otWinner(x) ? `${otTag(r, 1.2)} ${x.clock} · Winner` : `${ORD(x.per)} ${x.clock}`}${tagOf(x) ? ` · ${tagOf(x)}` : ""}</span><span class="nm"><span class="pw">${esc(x.name)}${worst ? penSVG("under2", r, "left:-2px;bottom:-7px;width:calc(100% + 4px);height:8px", 1.8, 1.2 + k * 0.12) : ""}</span></span>${z.sc ? `<span class="ag" style="font-size:13px;color:var(--mu)">${dashed(z.sc)}</span>` : ""}</figcaption>`);
     multi.appendChild(fig);
   });
   // Load tracking once the summary is near the screen, then draw every goal in one shared crop.
@@ -91,12 +96,12 @@ export function feedCard(g, x, isNew, at, approx) {
   const r = rng(hash(`${g.key}|${x.id}|feed`)), worst = x.sev >= 60;
   const z = scoringRows(g).find((q) => q.x === x);
   const el = document.createElement("article");
-  el.className = "goal notrack" + (isNew ? " new" : "");
+  el.className = "goal notrack" + (isNew ? " new" : "") + (otWinner(x) ? " otw" : "");
   el.dataset.game = g.key;
   el.dataset.goal = x.id;
   el.innerHTML = `<figure class="draw"></figure><div>
     <div class="kick" style="display:flex;align-items:center;gap:8px;color:var(--ink2)"><i style="width:9px;height:9px;display:block;background:${chip(g.rival)}"></i>${g.rival} vs ${g.opp}<span class="mono ago" data-at="${at}" data-approx="${approx ? 1 : 0}">${ago(at, approx)}</span></div>
-    <div class="mono" style="margin-top:8px">${ORD(x.per)} · ${x.clock}${tagOf(x) ? ` · ${tagOf(x)}` : ""}</div>
+    <div class="mono" style="margin-top:8px">${otWinner(x) ? `${otTag(r, isNew ? 0.6 : 0)} · ${x.clock} · Winner` : `${ORD(x.per)} · ${x.clock}`}${tagOf(x) ? ` · ${tagOf(x)}` : ""}</div>
     <div class="who"><span class="pw">Goal against${worst ? penSVG("under2", r, "left:-2px;bottom:-10px;width:calc(100% + 4px);height:10px", 2.2, isNew ? 0.9 : 0) : ""}</span> <span class="whoteam">${teamName(g.rival)}</span></div>
     <div class="by">${esc(x.name)} <span>${g.opp}</span></div>
     <p class="ctx">${esc(goalContext(g, x))}</p>
@@ -126,7 +131,7 @@ const flapHTML = (str) => `<span class="flap" aria-hidden="true">${[...String(st
 // A final the rival lost gets the pen: a circle on its score and an arrow pointing at the game.
 export function sbRow(g, status, animate = true) {
   const r = rng(hash(g.key + "|live"));
-  const fin = status === "Final", delay = animate ? 0.1 : 0;
+  const fin = status.startsWith("Final"), delay = animate ? 0.1 : 0;
   const score = g.os > g.rs
     ? `<i>${teamName(g.opp)}</i> ${flapHTML(g.os)} <i>${teamName(g.rival)}</i> ${fin ? circled(g.rs, r, delay) : flapHTML(g.rs)}<span class="sr">${teamName(g.opp)} ${g.os}, ${teamName(g.rival)} ${g.rs}</span>`
     : `<i>${teamName(g.rival)}</i> <span class="vs">vs</span> <i>${teamName(g.opp)}</i>`;
