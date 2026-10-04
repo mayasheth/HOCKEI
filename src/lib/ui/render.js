@@ -95,8 +95,8 @@ export function feedCard(g, x, isNew, at, approx) {
   el.dataset.game = g.key;
   el.dataset.goal = x.id;
   el.innerHTML = `<figure class="draw"></figure><div>
-    <div class="kick" style="display:flex;align-items:center;gap:8px;color:var(--ink2)"><i style="width:9px;height:9px;display:block;background:${chip(g.rival)}"></i>${g.rival} vs ${g.opp}</div>
-    <div class="mono" style="margin-top:8px">${ORD(x.per)} · ${x.clock}${tagOf(x) ? ` · ${tagOf(x)}` : ""} · <span class="ago" data-at="${at}" data-approx="${approx ? 1 : 0}">${ago(at, approx)}</span></div>
+    <div class="kick" style="display:flex;align-items:center;gap:8px;color:var(--ink2)"><i style="width:9px;height:9px;display:block;background:${chip(g.rival)}"></i>${g.rival} vs ${g.opp}<span class="mono ago" data-at="${at}" data-approx="${approx ? 1 : 0}">${ago(at, approx)}</span></div>
+    <div class="mono" style="margin-top:8px">${ORD(x.per)} · ${x.clock}${tagOf(x) ? ` · ${tagOf(x)}` : ""}</div>
     <div class="who"><span class="pw">${esc(x.name)}${worst ? penSVG("under2", r, "left:-2px;bottom:-10px;width:calc(100% + 4px);height:10px", 2.2, isNew ? 0.9 : 0) : ""}</span></div>
     <p class="ctx">${esc(goalContext(g, x))}</p>
     ${z && z.sc ? `<div class="ag" style="margin-top:10px;font-weight:700">${dashed(z.sc)}</div>` : ""}</div>`;

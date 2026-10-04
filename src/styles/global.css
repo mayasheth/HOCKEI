@@ -95,6 +95,7 @@ svg.pending .rink path { stroke-dasharray: 3 5; }
   .goal figure.draw svg { height: auto; width: 100%; max-height: 260px; }
 }
 .goal.new { animation: roll .8s cubic-bezier(.2, .8, .2, 1) both; }
+.goal .ago { margin-left: auto; white-space: nowrap; font-weight: 400; letter-spacing: .1em; }
 .goal.notrack { grid-template-columns: minmax(0, 1fr); }
 .goal.notrack figure.draw { display: none; }
 .goal.trackin figure.draw { animation: roll .8s cubic-bezier(.2, .8, .2, 1) both; }
