@@ -14,7 +14,7 @@ const status = (g) => {
   if (g.status) return g.status;
   if (FINAL.has(g.state)) return "Final";
   if (g.state === "PRE") return "Pre-game";
-  if (g.clock?.inIntermission) return `${ORD(g.period)} intermission`;
+  if (g.clock?.inIntermission) return `${ORD(g.period)} INT`;
   return `${ORD(g.period)} · ${g.clock?.timeRemaining?.replace(/^0(\d)/, "$1") || ""}`;
 };
 // Rough wall-clock time of a goal, used only to order goals already scored when the page opens.
@@ -158,7 +158,7 @@ export function startLive(root, rivals, { replayDate, at = 0, onChange, next = (
         const goals = g.goals.filter((x) => x.t <= t), ours = g.ours.filter((x) => x <= t);
         const st = c.pre ? "PRE" : c.fin ? "OFF" : "LIVE";
         const left = c.per ? (c.per <= 3 ? 20 * c.per - t : 0) : 0;
-        const label = c.pre ? "Pre-game" : c.fin ? "Final" : c.int ? `${ORD(c.int)} intermission` : c.per === 4 ? `OT · ${Math.floor(65 - t)}:${String(Math.round(((65 - t) % 1) * 60) % 60).padStart(2, "0")}` : `${ORD(c.per)} · ${Math.floor(left)}:${String(Math.round((left % 1) * 60) % 60).padStart(2, "0")}`;
+        const label = c.pre ? "Pre-game" : c.fin ? "Final" : c.int ? `${ORD(c.int)} INT` : c.per === 4 ? `OT · ${Math.floor(65 - t)}:${String(Math.round(((65 - t) % 1) * 60) % 60).padStart(2, "0")}` : `${ORD(c.per)} · ${Math.floor(left)}:${String(Math.round((left % 1) * 60) % 60).padStart(2, "0")}`;
         return { ...g, state: st, status: label, goals, ours, os: c.fin ? g.os : goals.length, rs: c.fin ? g.rs : ours.length };
       });
       const hold = update(frame, Date.now());
