@@ -95,6 +95,9 @@ svg.pending .rink path { stroke-dasharray: 3 5; }
   .goal figure.draw svg { height: auto; width: 100%; max-height: 260px; }
 }
 .goal.new { animation: roll .8s cubic-bezier(.2, .8, .2, 1) both; }
+.goal.notrack { grid-template-columns: minmax(0, 1fr); }
+.goal.notrack figure.draw { display: none; }
+.goal.trackin figure.draw { animation: roll .8s cubic-bezier(.2, .8, .2, 1) both; }
 .goal.new .who { animation: reg .9s cubic-bezier(.2, .8, .2, 1) both; }
 .sbrow, .goal { transition: opacity .5s ease, transform .5s ease; }
 .leaving { opacity: 0; transform: translateY(8px); }
@@ -185,7 +188,7 @@ svg.pending .rink path { stroke-dasharray: 3 5; }
 .pick:hover { color: var(--ink2); }
 
 @media (prefers-reduced-motion: reduce) {
-  .goal.new, .goal.new .who, .game.print .sl, .game.print .deck, .game.print .stats, .game.print .multi figure, .flap b.go, .livedot { animation: none; }
+  .goal.new, .goal.new .who, .goal.trackin figure.draw, .game.print .sl, .game.print .deck, .game.print .stats, .game.print .multi figure, .flap b.go, .livedot { animation: none; }
   .sbrow, .goal { transition: none; }
   .pen.sweep, .pen.wipe { animation: none; -webkit-mask-image: none; mask-image: none; clip-path: none; }
 }

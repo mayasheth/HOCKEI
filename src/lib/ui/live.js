@@ -3,7 +3,7 @@
 // and pauses while the tab is hidden. `?replay=YYYY-MM-DD` replays a past night instead.
 import { teamName } from "../teams.js";
 import { esc } from "./pen.js";
-import { ORD, feedCard, sbRow } from "./render.js";
+import { ORD, feedCard, sbRow, refreshAgo } from "./render.js";
 import { reduceMotion } from "./draw.js";
 
 const LIVE = new Set(["LIVE", "CRIT"]);
@@ -18,7 +18,19 @@ const status = (g) => {
   return `${ORD(g.period)} · ${g.clock?.timeRemaining?.replace(/^0(\d)/, "$1") || ""}`;
 };
 // Rough wall-clock time of a goal, used only to order goals already scored when the page opens.
-const estWall = (g, x) => Date.parse(g.startUTC) + (x.t * 1.6 + 18 * (x.per - 1)) * 60000;
+// Rough wall-clock time of a goal scored before the page first saw it: puck drop ~8 min after
+// the listed start, ~1.9 real minutes per game minute, 18-minute intermissions.
+const estWall = (g, x) => Date.parse(g.startUTC) + (8 + x.t * 1.9 + 18 * (Math.min(x.per, 4) - 1)) * 60000;
+// When this browser first saw each goal, so "min ago" stays exact across reloads.
+const SEEN_KEY = "hockei-goal-seen";
+function seenTimes() {
+  try {
+    const m = JSON.parse(localStorage.getItem(SEEN_KEY) || "{}"), cut = Date.now() - 2 * 864e5;
+    Object.keys(m).forEach((k) => m[k] < cut && delete m[k]);
+    return m;
+  } catch { return {}; }
+}
+function saveSeen(m) { try { localStorage.setItem(SEEN_KEY, JSON.stringify(m)); } catch { /* private mode */ } }
 const localTime = (iso) => new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 
 export function startLive(root, rivals, { replayDate, at = 0, onChange, next = () => [] }) {
@@ -42,8 +54,17 @@ export function startLive(root, rivals, { replayDate, at = 0, onChange, next = (
       : `<p class="deck" style="margin:0">No rivals playing right now.</p>${nx[0] ? `<p class="ag" style="margin:0;color:var(--mu)">Next: ${esc(new Date(nx[0].startUTC).toLocaleDateString("en-US", { weekday: "long" }))}, ${nx[0].rival} ${nx[0].home ? "vs" : "at"} ${nx[0].opp}</p>` : ""}`;
   }
 
+  const firstSeen = replayDate ? {} : seenTimes();
+  setInterval(() => refreshAgo(root), 30000);
+
   function addCard(g, x, isNew, key) {
-    const card = feedCard(g, x, isNew);
+    const id = `${g.id}-${x.id}`;
+    let at = firstSeen[id], approx = false;
+    if (!at && isNew) at = firstSeen[id] = key;
+    if (!at) { at = Math.min(key, Date.now()); approx = true; }
+    if (!replayDate) saveSeen(firstSeen);
+    key = at;
+    const card = feedCard(g, x, isNew, at, approx);
     card._k = key;
     const before = [...feed.children].find((c) => c._k < key);
     feed.insertBefore(card, before || null);
@@ -71,13 +92,13 @@ export function startLive(root, rivals, { replayDate, at = 0, onChange, next = (
       if (!first && g.os > prevOs) st.row.querySelector(".flap b")?.classList.add("go");
       for (const x of g.goals) {
         if (seen.has(`${g.key}|${x.id}`)) continue;
-        addCard(g, x, !first, first ? estWall(g, x) : wall);
+        addCard(g, x, !first, !first ? wall : replayDate ? wall - (100 - x.t) * 1000 : estWall(g, x));
         newGoal = true;
         if (!first) sr.textContent = `Goal against ${g.rival}: ${x.name}, ${ORD(x.per)} period ${x.clock}.`;
       }
       // Goals taken back on review.
       const ids = new Set(g.goals.map((x) => String(x.id)));
-      feed.querySelectorAll(`[data-game="${g.key}"]`).forEach((c) => { if (!ids.has(c.dataset.goal)) { c.remove(); seen.delete(`${g.key}|${c.dataset.goal}`); } });
+      feed.querySelectorAll(`[data-game="${g.key}"]`).forEach((c) => { if (!ids.has(c.dataset.goal)) { c.dataset.gone = "1"; c.remove(); seen.delete(`${g.key}|${c.dataset.goal}`); } });
       if (FINAL.has(g.state) && !st.finalAt) st.finalAt = Date.now();
     }
     // A final lingers on the board, then leaves for Recent.
@@ -86,7 +107,7 @@ export function startLive(root, rivals, { replayDate, at = 0, onChange, next = (
       shown.delete(key);
       const out = [st.row, ...feed.querySelectorAll(`[data-game="${key}"]`)];
       out.forEach((n) => n.classList.add("leaving"));
-      setTimeout(() => { out.forEach((n) => n.remove()); renderIdle(); onChange?.(); }, reduceMotion() ? 0 : 600);
+      setTimeout(() => { out.forEach((n) => { n.dataset.gone = "1"; n.remove(); }); renderIdle(); onChange?.(); }, reduceMotion() ? 0 : 600);
       changed = true;
     }
     first = false;

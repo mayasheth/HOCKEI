@@ -75,17 +75,28 @@ export function summaryEl(g) {
   return el;
 }
 
-// Live goal card. Tracking may not exist yet; retry for a few minutes.
-export function feedCard(g, x, isNew) {
+// "12 min ago". Estimated times (goals scored before the page first saw them) get a "~".
+export function ago(at, approx) {
+  const m = Math.max(0, Math.round((Date.now() - at) / 60000));
+  const txt = m < 1 ? "just now" : m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} hr ${m % 60 ? `${m % 60} min ` : ""}ago`;
+  return approx && m >= 1 ? `~${txt}` : txt;
+}
+export function refreshAgo(root = document) {
+  root.querySelectorAll(".ago").forEach((n) => (n.textContent = ago(+n.dataset.at, n.dataset.approx === "1")));
+}
+
+// Live goal card: text first; the drawing rolls in once NHL tracking is published
+// (usually several minutes after the goal). Retries every minute for 20 minutes.
+export function feedCard(g, x, isNew, at, approx) {
   const r = rng(hash(`${g.key}|${x.id}|feed`)), worst = x.sev >= 60;
   const z = scoringRows(g).find((q) => q.x === x);
   const el = document.createElement("article");
-  el.className = "goal" + (isNew ? " new" : "");
+  el.className = "goal notrack" + (isNew ? " new" : "");
   el.dataset.game = g.key;
   el.dataset.goal = x.id;
   el.innerHTML = `<figure class="draw"></figure><div>
     <div class="kick" style="display:flex;align-items:center;gap:8px;color:var(--ink2)"><i style="width:9px;height:9px;display:block;background:${chip(g.rival)}"></i>${g.rival} vs ${g.opp}</div>
-    <div class="mono" style="margin-top:8px">${ORD(x.per)} · ${x.clock}${tagOf(x) ? ` · ${tagOf(x)}` : ""}</div>
+    <div class="mono" style="margin-top:8px">${ORD(x.per)} · ${x.clock}${tagOf(x) ? ` · ${tagOf(x)}` : ""} · <span class="ago" data-at="${at}" data-approx="${approx ? 1 : 0}">${ago(at, approx)}</span></div>
     <div class="who"><span class="pw">${esc(x.name)}${worst ? penSVG("under2", r, "left:-2px;bottom:-10px;width:calc(100% + 4px);height:10px", 2.2, isNew ? 0.9 : 0) : ""}</span></div>
     <p class="ctx">${esc(goalContext(g, x))}</p>
     ${z && z.sc ? `<div class="ag" style="margin-top:10px;font-weight:700">${dashed(z.sc)}</div>` : ""}</div>`;
@@ -94,9 +105,15 @@ export function feedCard(g, x, isNew) {
   let tries = 0;
   const attempt = async () => {
     const t = await loadTrack(x.ppt, g.rival);
-    if (t) { dr.setTrack(t); isNew && !reduceMotion() ? dr.play(2400, 200) : dr.draw(1); return; }
-    dr.setTrack(null);
-    if (x.ppt && ++tries < 10 && el.isConnected !== false) setTimeout(attempt, 60000);
+    if (t) {
+      const arriving = el.isConnected;
+      el.classList.remove("notrack");
+      if (arriving) el.classList.add("trackin");
+      dr.setTrack(t);
+      (isNew || arriving) && !reduceMotion() ? dr.play(2400, 200) : dr.draw(1);
+      return;
+    }
+    if (x.ppt && ++tries < 20) setTimeout(() => { if (!el.dataset.gone) attempt(); }, 60000);
   };
   attempt();
   return el;
