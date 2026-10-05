@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HOCKEI Theme Comparison</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #111;
+      color: #fff;
+      padding: 40px;
+      min-height: 100vh;
+    }
+
+    h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.5rem;
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
+      color: #fff;
+    }
+
+    .subtitle {
+      color: #888;
+      margin-bottom: 48px;
+      font-size: 0.95rem;
+    }
+
+    .themes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 32px;
+    }
+
+    .theme-card {
+      border-radius: 16px;
+      overflow: hidden;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .theme-card:hover {
+      transform: translateY(-4px);
+    }
+
+    .theme-card.selected {
+      border-color: #fff;
+    }
+
+    .theme-header {
+      padding: 20px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .theme-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem;
+      letter-spacing: 0.08em;
+    }
+
+    .theme-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      padding: 4px 10px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .theme-content {
+      padding: 0 24px 24px;
+    }
+
+    /* Sample card inside each theme */
+    .sample-card {
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .sample-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+    }
+
+    .sample-body {
+      padding: 16px 14px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .sample-logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+
+    .sample-info {
+      flex: 1;
+    }
+
+    .sample-scorer {
+      font-size: 0.85rem;
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    .sample-meta {
+      font-size: 0.72rem;
+      font-style: italic;
+    }
+
+    /* Color swatches */
+    .swatches {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .swatch {
+      flex: 1;
+      height: 32px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.5rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    /* ==========================================
+       THEME 1: Current (Warm Neutrals)
+       ========================================== */
+    .theme-warm {
+      --bg-arena: #0a0a09;
+      --bg-surface: #141311;
+      --bg-elevated: #1c1a17;
+      --text-primary: #f5f3ef;
+      --text-secondary: #a8a49c;
+      --text-tertiary: #6b675f;
+      --text-dim: #4a4740;
+      --border-subtle: rgba(245, 243, 239, 0.06);
+      --accent: #E53935;
+    }
+
+    .theme-warm .theme-card-inner {
+      background: var(--bg-arena);
+    }
+
+    .theme-warm .theme-header {
+      background: var(--bg-elevated);
+    }
+
+    .theme-warm .theme-name {
+      color: var(--text-primary);
+    }
+
+    .theme-warm .theme-tag {
+      background: rgba(245, 243, 239, 0.1);
+      color: var(--text-secondary);
+    }
+
+    .theme-warm .sample-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .theme-warm .sample-header {
+      background: linear-gradient(to right, rgba(229, 57, 53, 0.12), var(--bg-elevated));
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .theme-warm .sample-header .team {
+      color: var(--accent);
+    }
+
+    .theme-warm .sample-header .type {
+      color: var(--text-primary);
+    }
+
+    .theme-warm .sample-header .meta {
+      color: var(--text-primary);
+      font-size: 0.65rem;
+    }
+
+    .theme-warm .sample-body {
+      background: var(--bg-surface);
+    }
+
+    .theme-warm .sample-logo {
+      background: var(--bg-elevated);
+      color: var(--text-tertiary);
+    }
+
+    .theme-warm .sample-scorer {
+      color: var(--text-secondary);
+    }
+
+    .theme-warm .sample-meta {
+      color: var(--text-tertiary);
+    }
+
+    .theme-warm .swatch-1 { background: var(--bg-arena); color: var(--text-tertiary); }
+    .theme-warm .swatch-2 { background: var(--bg-surface); color: var(--text-tertiary); }
+    .theme-warm .swatch-3 { background: var(--bg-elevated); color: var(--text-secondary); }
+    .theme-warm .swatch-4 { background: var(--text-tertiary); color: var(--bg-arena); }
+    .theme-warm .swatch-5 { background: var(--text-primary); color: var(--bg-arena); }
+
+    /* ==========================================
+       THEME 2: Cool Slate (Blue-Gray)
+       ========================================== */
+    .theme-slate {
+      --bg-arena: #08090b;
+      --bg-surface: #0f1114;
+      --bg-elevated: #171a1f;
+      --text-primary: #eef1f5;
+      --text-secondary: #9ba3b0;
+      --text-tertiary: #5c6370;
+      --text-dim: #3d4249;
+      --border-subtle: rgba(238, 241, 245, 0.06);
+      --accent: #E53935;
+    }
+
+    .theme-slate .theme-card-inner {
+      background: var(--bg-arena);
+    }
+
+    .theme-slate .theme-header {
+      background: var(--bg-elevated);
+    }
+
+    .theme-slate .theme-name {
+      color: var(--text-primary);
+    }
+
+    .theme-slate .theme-tag {
+      background: rgba(155, 163, 176, 0.15);
+      color: var(--text-secondary);
+    }
+
+    .theme-slate .sample-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .theme-slate .sample-header {
+      background: linear-gradient(to right, rgba(229, 57, 53, 0.12), var(--bg-elevated));
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .theme-slate .sample-header .team {
+      color: var(--accent);
+    }
+
+    .theme-slate .sample-header .type {
+      color: var(--text-primary);
+    }
+
+    .theme-slate .sample-header .meta {
+      color: var(--text-primary);
+      font-size: 0.65rem;
+    }
+
+    .theme-slate .sample-body {
+      background: var(--bg-surface);
+    }
+
+    .theme-slate .sample-logo {
+      background: var(--bg-elevated);
+      color: var(--text-tertiary);
+    }
+
+    .theme-slate .sample-scorer {
+      color: var(--text-secondary);
+    }
+
+    .theme-slate .sample-meta {
+      color: var(--text-tertiary);
+    }
+
+    .theme-slate .swatch-1 { background: var(--bg-arena); color: var(--text-tertiary); }
+    .theme-slate .swatch-2 { background: var(--bg-surface); color: var(--text-tertiary); }
+    .theme-slate .swatch-3 { background: var(--bg-elevated); color: var(--text-secondary); }
+    .theme-slate .swatch-4 { background: var(--text-tertiary); color: var(--bg-arena); }
+    .theme-slate .swatch-5 { background: var(--text-primary); color: var(--bg-arena); }
+
+    /* ==========================================
+       THEME 3: Deep Indigo (Purple-Blue)
+       ========================================== */
+    .theme-indigo {
+      --bg-arena: #07080c;
+      --bg-surface: #0d0f15;
+      --bg-elevated: #14161f;
+      --text-primary: #eceef5;
+      --text-secondary: #9a9eb5;
+      --text-tertiary: #5b5f75;
+      --text-dim: #3c3f4d;
+      --border-subtle: rgba(236, 238, 245, 0.06);
+      --accent: #E53935;
+    }
+
+    .theme-indigo .theme-card-inner {
+      background: var(--bg-arena);
+    }
+
+    .theme-indigo .theme-header {
+      background: var(--bg-elevated);
+    }
+
+    .theme-indigo .theme-name {
+      color: var(--text-primary);
+    }
+
+    .theme-indigo .theme-tag {
+      background: rgba(154, 158, 181, 0.15);
+      color: var(--text-secondary);
+    }
+
+    .theme-indigo .sample-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .theme-indigo .sample-header {
+      background: linear-gradient(to right, rgba(229, 57, 53, 0.12), var(--bg-elevated));
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .theme-indigo .sample-header .team {
+      color: var(--accent);
+    }
+
+    .theme-indigo .sample-header .type {
+      color: var(--text-primary);
+    }
+
+    .theme-indigo .sample-header .meta {
+      color: var(--text-primary);
+      font-size: 0.65rem;
+    }
+
+    .theme-indigo .sample-body {
+      background: var(--bg-surface);
+    }
+
+    .theme-indigo .sample-logo {
+      background: var(--bg-elevated);
+      color: var(--text-tertiary);
+    }
+
+    .theme-indigo .sample-scorer {
+      color: var(--text-secondary);
+    }
+
+    .theme-indigo .sample-meta {
+      color: var(--text-tertiary);
+    }
+
+    .theme-indigo .swatch-1 { background: var(--bg-arena); color: var(--text-tertiary); }
+    .theme-indigo .swatch-2 { background: var(--bg-surface); color: var(--text-tertiary); }
+    .theme-indigo .swatch-3 { background: var(--bg-elevated); color: var(--text-secondary); }
+    .theme-indigo .swatch-4 { background: var(--text-tertiary); color: var(--bg-arena); }
+    .theme-indigo .swatch-5 { background: var(--text-primary); color: var(--bg-arena); }
+
+    /* ==========================================
+       THEME 4: Midnight Navy
+       ========================================== */
+    .theme-navy {
+      --bg-arena: #060810;
+      --bg-surface: #0b0e18;
+      --bg-elevated: #121622;
+      --text-primary: #e8ecf4;
+      --text-secondary: #8d95a8;
+      --text-tertiary: #525a6b;
+      --text-dim: #363c4a;
+      --border-subtle: rgba(232, 236, 244, 0.06);
+      --accent: #E53935;
+    }
+
+    .theme-navy .theme-card-inner {
+      background: var(--bg-arena);
+    }
+
+    .theme-navy .theme-header {
+      background: var(--bg-elevated);
+    }
+
+    .theme-navy .theme-name {
+      color: var(--text-primary);
+    }
+
+    .theme-navy .theme-tag {
+      background: rgba(141, 149, 168, 0.15);
+      color: var(--text-secondary);
+    }
+
+    .theme-navy .sample-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .theme-navy .sample-header {
+      background: linear-gradient(to right, rgba(229, 57, 53, 0.12), var(--bg-elevated));
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .theme-navy .sample-header .team {
+      color: var(--accent);
+    }
+
+    .theme-navy .sample-header .type {
+      color: var(--text-primary);
+    }
+
+    .theme-navy .sample-header .meta {
+      color: var(--text-primary);
+      font-size: 0.65rem;
+    }
+
+    .theme-navy .sample-body {
+      background: var(--bg-surface);
+    }
+
+    .theme-navy .sample-logo {
+      background: var(--bg-elevated);
+      color: var(--text-tertiary);
+    }
+
+    .theme-navy .sample-scorer {
+      color: var(--text-secondary);
+    }
+
+    .theme-navy .sample-meta {
+      color: var(--text-tertiary);
+    }
+
+    .theme-navy .swatch-1 { background: var(--bg-arena); color: var(--text-tertiary); }
+    .theme-navy .swatch-2 { background: var(--bg-surface); color: var(--text-tertiary); }
+    .theme-navy .swatch-3 { background: var(--bg-elevated); color: var(--text-secondary); }
+    .theme-navy .swatch-4 { background: var(--text-tertiary); color: var(--bg-arena); }
+    .theme-navy .swatch-5 { background: var(--text-primary); color: var(--bg-arena); }
+
+    /* ==========================================
+       THEME 5: Arctic Steel (Light Blue-Gray)
+       ========================================== */
+    .theme-arctic {
+      --bg-arena: #090a0d;
+      --bg-surface: #10121a;
+      --bg-elevated: #181b25;
+      --text-primary: #f0f4fa;
+      --text-secondary: #a4b0c4;
+      --text-tertiary: #5f6b7d;
+      --text-dim: #404755;
+      --border-subtle: rgba(240, 244, 250, 0.07);
+      --accent: #E53935;
+    }
+
+    .theme-arctic .theme-card-inner {
+      background: var(--bg-arena);
+    }
+
+    .theme-arctic .theme-header {
+      background: var(--bg-elevated);
+    }
+
+    .theme-arctic .theme-name {
+      color: var(--text-primary);
+    }
+
+    .theme-arctic .theme-tag {
+      background: rgba(164, 176, 196, 0.15);
+      color: var(--text-secondary);
+    }
+
+    .theme-arctic .sample-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .theme-arctic .sample-header {
+      background: linear-gradient(to right, rgba(229, 57, 53, 0.12), var(--bg-elevated));
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .theme-arctic .sample-header .team {
+      color: var(--accent);
+    }
+
+    .theme-arctic .sample-header .type {
+      color: var(--text-primary);
+    }
+
+    .theme-arctic .sample-header .meta {
+      color: var(--text-primary);
+      font-size: 0.65rem;
+    }
+
+    .theme-arctic .sample-body {
+      background: var(--bg-surface);
+    }
+
+    .theme-arctic .sample-logo {
+      background: var(--bg-elevated);
+      color: var(--text-tertiary);
+    }
+
+    .theme-arctic .sample-scorer {
+      color: var(--text-secondary);
+    }
+
+    .theme-arctic .sample-meta {
+      color: var(--text-tertiary);
+    }
+
+    .theme-arctic .swatch-1 { background: var(--bg-arena); color: var(--text-tertiary); }
+    .theme-arctic .swatch-2 { background: var(--bg-surface); color: var(--text-tertiary); }
+    .theme-arctic .swatch-3 { background: var(--bg-elevated); color: var(--text-secondary); }
+    .theme-arctic .swatch-4 { background: var(--text-tertiary); color: var(--bg-arena); }
+    .theme-arctic .swatch-5 { background: var(--text-primary); color: var(--bg-arena); }
+
+    /* ==========================================
+       THEME 6: Pure Neutral (No Tint)
+       ========================================== */
+    .theme-neutral {
+      --bg-arena: #090909;
+      --bg-surface: #111111;
+      --bg-elevated: #1a1a1a;
+      --text-primary: #f0f0f0;
+      --text-secondary: #a0a0a0;
+      --text-tertiary: #606060;
+      --text-dim: #404040;
+      --border-subtle: rgba(240, 240, 240, 0.06);
+      --accent: #E53935;
+    }
+
+    .theme-neutral .theme-card-inner {
+      background: var(--bg-arena);
+    }
+
+    .theme-neutral .theme-header {
+      background: var(--bg-elevated);
+    }
+
+    .theme-neutral .theme-name {
+      color: var(--text-primary);
+    }
+
+    .theme-neutral .theme-tag {
+      background: rgba(160, 160, 160, 0.15);
+      color: var(--text-secondary);
+    }
+
+    .theme-neutral .sample-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .theme-neutral .sample-header {
+      background: linear-gradient(to right, rgba(229, 57, 53, 0.12), var(--bg-elevated));
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .theme-neutral .sample-header .team {
+      color: var(--accent);
+    }
+
+    .theme-neutral .sample-header .type {
+      color: var(--text-primary);
+    }
+
+    .theme-neutral .sample-header .meta {
+      color: var(--text-primary);
+      font-size: 0.65rem;
+    }
+
+    .theme-neutral .sample-body {
+      background: var(--bg-surface);
+    }
+
+    .theme-neutral .sample-logo {
+      background: var(--bg-elevated);
+      color: var(--text-tertiary);
+    }
+
+    .theme-neutral .sample-scorer {
+      color: var(--text-secondary);
+    }
+
+    .theme-neutral .sample-meta {
+      color: var(--text-tertiary);
+    }
+
+    .theme-neutral .swatch-1 { background: var(--bg-arena); color: var(--text-tertiary); }
+    .theme-neutral .swatch-2 { background: var(--bg-surface); color: var(--text-tertiary); }
+    .theme-neutral .swatch-3 { background: var(--bg-elevated); color: var(--text-secondary); }
+    .theme-neutral .swatch-4 { background: var(--text-tertiary); color: var(--bg-arena); }
+    .theme-neutral .swatch-5 { background: var(--text-primary); color: var(--bg-arena); }
+  </style>
+</head>
+<body>
+  <h1>HOCKEI THEME COMPARISON</h1>
+  <p class="subtitle">Click a theme to select it. Compare cool-tinted options against the current warm neutral palette.</p>
+
+  <div class="themes-grid">
+    <!-- Theme 1: Current Warm -->
+    <div class="theme-card theme-warm selected">
+      <div class="theme-card-inner">
+        <div class="theme-header">
+          <span class="theme-name">WARM NEUTRALS</span>
+          <span class="theme-tag">Current</span>
+        </div>
+        <div class="theme-content">
+          <div class="sample-card">
+            <div class="sample-header">
+              <span><span class="team">TOR</span> <span style="color: var(--text-tertiary)">·</span> <span class="type">GOAL AGAINST</span></span>
+              <span class="meta">2nd 14:32</span>
+            </div>
+            <div class="sample-body">
+              <div class="sample-logo">TOR</div>
+              <div class="sample-info">
+                <div class="sample-scorer">Auston Matthews</div>
+                <div class="sample-meta">wrist shot</div>
+              </div>
+            </div>
+          </div>
+          <div class="swatches">
+            <div class="swatch swatch-1">ARENA</div>
+            <div class="swatch swatch-2">SURFACE</div>
+            <div class="swatch swatch-3">ELEVATED</div>
+            <div class="swatch swatch-4">TERTIARY</div>
+            <div class="swatch swatch-5">PRIMARY</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Theme 2: Cool Slate -->
+    <div class="theme-card theme-slate">
+      <div class="theme-card-inner">
+        <div class="theme-header">
+          <span class="theme-name">COOL SLATE</span>
+          <span class="theme-tag">Blue-Gray</span>
+        </div>
+        <div class="theme-content">
+          <div class="sample-card">
+            <div class="sample-header">
+              <span><span class="team">TOR</span> <span style="color: var(--text-tertiary)">·</span> <span class="type">GOAL AGAINST</span></span>
+              <span class="meta">2nd 14:32</span>
+            </div>
+            <div class="sample-body">
+              <div class="sample-logo">TOR</div>
+              <div class="sample-info">
+                <div class="sample-scorer">Auston Matthews</div>
+                <div class="sample-meta">wrist shot</div>
+              </div>
+            </div>
+          </div>
+          <div class="swatches">
+            <div class="swatch swatch-1">ARENA</div>
+            <div class="swatch swatch-2">SURFACE</div>
+            <div class="swatch swatch-3">ELEVATED</div>
+            <div class="swatch swatch-4">TERTIARY</div>
+            <div class="swatch swatch-5">PRIMARY</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Theme 3: Deep Indigo -->
+    <div class="theme-card theme-indigo">
+      <div class="theme-card-inner">
+        <div class="theme-header">
+          <span class="theme-name">DEEP INDIGO</span>
+          <span class="theme-tag">Purple-Blue</span>
+        </div>
+        <div class="theme-content">
+          <div class="sample-card">
+            <div class="sample-header">
+              <span><span class="team">TOR</span> <span style="color: var(--text-tertiary)">·</span> <span class="type">GOAL AGAINST</span></span>
+              <span class="meta">2nd 14:32</span>
+            </div>
+            <div class="sample-body">
+              <div class="sample-logo">TOR</div>
+              <div class="sample-info">
+                <div class="sample-scorer">Auston Matthews</div>
+                <div class="sample-meta">wrist shot</div>
+              </div>
+            </div>
+          </div>
+          <div class="swatches">
+            <div class="swatch swatch-1">ARENA</div>
+            <div class="swatch swatch-2">SURFACE</div>
+            <div class="swatch swatch-3">ELEVATED</div>
+            <div class="swatch swatch-4">TERTIARY</div>
+            <div class="swatch swatch-5">PRIMARY</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Theme 4: Midnight Navy -->
+    <div class="theme-card theme-navy">
+      <div class="theme-card-inner">
+        <div class="theme-header">
+          <span class="theme-name">MIDNIGHT NAVY</span>
+          <span class="theme-tag">Deep Blue</span>
+        </div>
+        <div class="theme-content">
+          <div class="sample-card">
+            <div class="sample-header">
+              <span><span class="team">TOR</span> <span style="color: var(--text-tertiary)">·</span> <span class="type">GOAL AGAINST</span></span>
+              <span class="meta">2nd 14:32</span>
+            </div>
+            <div class="sample-body">
+              <div class="sample-logo">TOR</div>
+              <div class="sample-info">
+                <div class="sample-scorer">Auston Matthews</div>
+                <div class="sample-meta">wrist shot</div>
+              </div>
+            </div>
+          </div>
+          <div class="swatches">
+            <div class="swatch swatch-1">ARENA</div>
+            <div class="swatch swatch-2">SURFACE</div>
+            <div class="swatch swatch-3">ELEVATED</div>
+            <div class="swatch swatch-4">TERTIARY</div>
+            <div class="swatch swatch-5">PRIMARY</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Theme 5: Arctic Steel -->
+    <div class="theme-card theme-arctic">
+      <div class="theme-card-inner">
+        <div class="theme-header">
+          <span class="theme-name">ARCTIC STEEL</span>
+          <span class="theme-tag">Ice Blue</span>
+        </div>
+        <div class="theme-content">
+          <div class="sample-card">
+            <div class="sample-header">
+              <span><span class="team">TOR</span> <span style="color: var(--text-tertiary)">·</span> <span class="type">GOAL AGAINST</span></span>
+              <span class="meta">2nd 14:32</span>
+            </div>
+            <div class="sample-body">
+              <div class="sample-logo">TOR</div>
+              <div class="sample-info">
+                <div class="sample-scorer">Auston Matthews</div>
+                <div class="sample-meta">wrist shot</div>
+              </div>
+            </div>
+          </div>
+          <div class="swatches">
+            <div class="swatch swatch-1">ARENA</div>
+            <div class="swatch swatch-2">SURFACE</div>
+            <div class="swatch swatch-3">ELEVATED</div>
+            <div class="swatch swatch-4">TERTIARY</div>
+            <div class="swatch swatch-5">PRIMARY</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Theme 6: Pure Neutral -->
+    <div class="theme-card theme-neutral">
+      <div class="theme-card-inner">
+        <div class="theme-header">
+          <span class="theme-name">PURE NEUTRAL</span>
+          <span class="theme-tag">No Tint</span>
+        </div>
+        <div class="theme-content">
+          <div class="sample-card">
+            <div class="sample-header">
+              <span><span class="team">TOR</span> <span style="color: var(--text-tertiary)">·</span> <span class="type">GOAL AGAINST</span></span>
+              <span class="meta">2nd 14:32</span>
+            </div>
+            <div class="sample-body">
+              <div class="sample-logo">TOR</div>
+              <div class="sample-info">
+                <div class="sample-scorer">Auston Matthews</div>
+                <div class="sample-meta">wrist shot</div>
+              </div>
+            </div>
+          </div>
+          <div class="swatches">
+            <div class="swatch swatch-1">ARENA</div>
+            <div class="swatch swatch-2">SURFACE</div>
+            <div class="swatch swatch-3">ELEVATED</div>
+            <div class="swatch swatch-4">TERTIARY</div>
+            <div class="swatch swatch-5">PRIMARY</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll('.theme-card').forEach(card => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+      });
+    });
+  </script>
+</body>
+</html>
