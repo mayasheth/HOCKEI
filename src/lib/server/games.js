@@ -145,8 +145,14 @@ export async function recent(rivals, offset, limit) {
 }
 
 // Tonight's (or a given date's) rival games, as scoring sheets.
+// The NHL's "now" scoreboard keeps last night's slate until well into the next day. Once every
+// game on it is over and Eastern time has moved to a new date, switch to today's slate.
+const easternDate = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date());
+
 export async function live(rivals, date) {
-  const day = await api(`score/${date || "now"}`, date ? 3600 : 10);
+  let day = await api(`score/${date || "now"}`, date ? 3600 : 10);
+  const today = easternDate();
+  if (!date && day.currentDate < today && (day.games || []).every((g) => isFinal(g.gameState))) day = await api(`score/${today}`, 60);
   const out = [];
   for (const g of day.games || []) {
     for (const t of [g.homeTeam.abbrev, g.awayTeam.abbrev]) {
@@ -159,7 +165,7 @@ export async function live(rivals, date) {
       out.push({ key: `${t}-${g.id}`, ...d, goals: d.goals.map(({ before, scorerId, goalie, ...x }) => x) });
     }
   }
-  return { date: day.currentDate || date, games: out, anyLive: out.some((g) => isLive(g.state)) };
+  return { date: date || (day.currentDate < today ? day.currentDate : today), games: out, anyLive: out.some((g) => isLive(g.state)) };
 }
 
 // Each rival's next game, with pre-game facts.

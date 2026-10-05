@@ -8,6 +8,16 @@ import { ORD, feedCard, sbRow, refreshAgo } from "./render.js";
 
 const LIVE = new Set(["LIVE", "CRIT"]);
 const FINAL = new Set(["OFF", "FINAL"]);
+// "Tonight" only for today's slate; an earlier one reads "Last night" or its weekday.
+const localISO = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+function slateLabel(date) {
+  if (!date) return "Tonight";
+  const now = new Date(), y = new Date(now);
+  y.setDate(now.getDate() - 1);
+  if (date >= localISO(now)) return "Tonight";
+  if (date === localISO(y)) return "Last night";
+  return new Date(`${date}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
+}
 const localTime = (iso) => new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 
 const status = (g) => {
@@ -35,14 +45,14 @@ function saveSeen(m) { try { localStorage.setItem(SEEN_KEY, JSON.stringify(m)); 
 export function startLive(root, rivals, { replayDate, at = 0, onFinals, next = () => [] }) {
   const shown = new Map(); // key -> { g, row }
   const seen = new Map(); // `${key}|${goalId}` -> card
-  let first = true, timer = null;
+  let first = true, timer = null, slateDate = null;
 
   root.innerHTML = `<div class="kick" id="liveKick">Live</div><div class="board" id="sb"></div><p class="sr" id="lvSr" aria-live="polite"></p><div class="feed" id="lvFeed"></div><div class="idle" id="lvIdle"></div>`;
   const sb = root.querySelector("#sb"), feed = root.querySelector("#lvFeed"), idle = root.querySelector("#lvIdle"), kick = root.querySelector("#liveKick"), sr = root.querySelector("#lvSr");
 
   function renderFrame() {
     const any = shown.size > 0, live = [...shown.values()].some((s) => LIVE.has(s.g.state));
-    kick.innerHTML = live ? '<span class="livedot"></span>Live' : any ? "Tonight" : "Live";
+    kick.innerHTML = live ? '<span class="livedot"></span>Live' : any ? slateLabel(slateDate) : "Live";
     sb.hidden = !any;
     feed.hidden = !feed.children.length;
     idle.hidden = any;
@@ -68,7 +78,8 @@ export function startLive(root, rivals, { replayDate, at = 0, onFinals, next = (
   }
 
   // Apply one snapshot of today's rival games. `wall` orders goals that arrive now.
-  function update(games, wall) {
+  function update(games, wall, date) {
+    if (date) slateDate = date;
     let newGoal = false;
     const keys = new Set(games.map((g) => g.key));
     // A new day: yesterday's games drop off.
@@ -114,7 +125,7 @@ export function startLive(root, rivals, { replayDate, at = 0, onFinals, next = (
       let any = false;
       try {
         const res = await fetch(`/api/live?rivals=${rivals.join(",")}`);
-        if (res.ok) { const d = await res.json(); update(d.games, Date.now()); any = d.anyLive || d.games.some((g) => g.state === "PRE"); }
+        if (res.ok) { const d = await res.json(); update(d.games, Date.now(), d.date); any = d.anyLive || d.games.some((g) => g.state === "PRE"); }
       } catch { /* keep the last snapshot */ }
       if (!document.hidden) timer = setTimeout(poll, any ? 20000 : 300000);
     };
@@ -151,7 +162,7 @@ export function startLive(root, rivals, { replayDate, at = 0, onFinals, next = (
         const label = c.pre ? "Pre-game" : c.fin ? (g.lp === "OT" ? "Final · OT" : g.lp === "SO" ? "Final · SO" : "Final") : c.int ? `${ORD(c.int)} INT` : c.per === 4 ? `OT · ${Math.floor(65 - t)}:${String(Math.round(((65 - t) % 1) * 60) % 60).padStart(2, "0")}` : `${ORD(c.per)} · ${Math.floor(left)}:${String(Math.round((left % 1) * 60) % 60).padStart(2, "0")}`;
         return { ...g, state: st, status: label, goals, ours, os: c.fin ? g.os : goals.length, rs: c.fin ? g.rs : ours.length };
       });
-      const hold = update(frame, Date.now());
+      const hold = update(frame, Date.now(), replayDate);
       if (frame.every((g) => g.state === "OFF")) return;
       timer = setTimeout(tick, hold ? 1500 : 140);
     };
