@@ -58,7 +58,9 @@ button { font: inherit; }
 @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
 main { display: flex; flex-direction: column; gap: 56px; min-width: 0; }
 .sec { display: flex; flex-direction: column; gap: 22px; }
-.sec > .kick { display: flex; align-items: center; gap: 10px; padding-bottom: 6px; border-bottom: 3px solid var(--ink); }
+/* Section heads, newspaper style: heavy rule, big headline type, hairline below. */
+.sechead { display: flex; align-items: center; gap: 12px; margin: 0; padding: 10px 0 8px; border-top: 6px solid var(--ink); border-bottom: 1px solid var(--ink); font-weight: 900; font-size: clamp(28px, 3.4vw, 40px); line-height: 1; letter-spacing: -.02em; }
+.sechead .livedot { width: 12px; height: 12px; }
 aside { border-left: 1px solid var(--ink); padding-left: 24px; display: flex; flex-direction: column; gap: 30px; }
 @media (max-width: 900px) { aside { border-left: 0; padding-left: 0; } }
 aside .kick { padding-bottom: 6px; border-bottom: 3px solid var(--ink); margin-bottom: 6px; }
@@ -86,7 +88,7 @@ figure.draw svg { display: block; width: 100%; height: auto; overflow: hidden; }
 svg.pending .rink path { stroke-dasharray: 3 5; }
 
 /* Live scoreboard and goal feed */
-.board { display: flex; flex-direction: column; border-top: 1px solid var(--ink); }
+.board { display: flex; flex-direction: column; margin-top: -12px; }
 .sbrow { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--faint); }
 .sbrow .sqs { display: flex; flex-direction: column; gap: 3px; }
 .sbrow .sq { width: 9px; height: 9px; display: block; }

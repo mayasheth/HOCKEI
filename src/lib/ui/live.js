@@ -48,7 +48,7 @@ export function startLive(root, rivals, favs, { replayDate, at = 0, onFinals, ne
   const seen = new Map(); // `${gameId}-${goalId}` -> card
   let first = true, timer = null, slateDate = null;
 
-  root.innerHTML = `<div class="kick" id="liveKick">Live</div><div class="board" id="sb"></div><p class="sr" id="lvSr" aria-live="polite"></p><div class="feed" id="lvFeed"></div><div class="idle" id="lvIdle"></div>`;
+  root.innerHTML = `<h2 class="sechead" id="liveKick">Live</h2><div class="board" id="sb"></div><p class="sr" id="lvSr" aria-live="polite"></p><div class="feed" id="lvFeed"></div><div class="idle" id="lvIdle"></div>`;
   const sb = root.querySelector("#sb"), feed = root.querySelector("#lvFeed"), idle = root.querySelector("#lvIdle"), kick = root.querySelector("#liveKick"), sr = root.querySelector("#lvSr");
 
   function renderFrame() {
