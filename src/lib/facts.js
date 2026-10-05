@@ -4,7 +4,7 @@
 // one-goal games, blowouts, weekday droughts).
 
 // Bump when rules change so cached game summaries are rebuilt.
-export const FACTS_VERSION = 5;
+export const FACTS_VERSION = 7;
 
 export const nth = (n) => n + (n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th");
 export const seasonLabel = (s) => `${s.slice(0, 4)}–${s.slice(6)}`;
@@ -13,6 +13,10 @@ const DAY = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "
 const weekday = (iso) => DAY[new Date(`${iso}T12:00:00Z`).getUTCDay()];
 const daysBetween = (a, b) => Math.round((new Date(`${b}T12:00:00Z`) - new Date(`${a}T12:00:00Z`)) / 864e5);
 const lostBy = (r) => r.ga - r.gf;
+
+// Generic streaks restart each season and don't carry between the regular season and playoffs
+// (preseason is never loaded). Records against one opponent may span seasons.
+const run = (rows, row) => rows.filter((r) => r.season === row.season && r.gameType === row.gameType);
 
 function trailing(rows, test) {
   let n = 0;
@@ -44,10 +48,10 @@ export function factsFor({ team, row, upto, detail, vs, since, goalie }) {
   const add = (big, l, s = "") => out.push({ big: String(big), l, s });
   const goals = detail.goals;
 
-  const winless = trailing(upto, (r) => r.res !== "W");
+  const winless = trailing(run(upto, row), (r) => r.res !== "W");
   if (lost && winless >= 3) add(nth(winless), "Straight game without a win");
 
-  const place = upto.filter((r) => r.home === row.home);
+  const place = run(upto, row).filter((r) => r.home === row.home);
   const placeStreak = trailing(place, (r) => r.res !== "W");
   if (lost && placeStreak >= 3 && placeStreak !== winless) add(nth(placeStreak), `Straight ${row.home ? "home" : "road"} game without a win`);
 
@@ -87,8 +91,8 @@ export function factsFor({ team, row, upto, detail, vs, since, goalie }) {
   }
 
   if (lost && Math.abs(row.gf - row.ga) === 1) {
-    const { w, l } = oneGoal(upto);
-    if (w + l >= 6 && l / (w + l) >= 0.6) add(`${w}–${l}`, "Record in one-goal games", "Last 20 games");
+    const season = run(upto, row), { w, l } = oneGoal(season);
+    if (w + l >= 6 && l / (w + l) >= 0.6) add(`${w}–${l}`, "Record in one-goal games", season.length > 20 ? "Last 20 games" : "This season");
   }
 
   const prevRow = upto[upto.length - 2];
@@ -98,7 +102,7 @@ export function factsFor({ team, row, upto, detail, vs, since, goalie }) {
   }
 
   if (lost) {
-    const dr = weekdayDrought(upto.slice(0, -1), row.date);
+    const dr = weekdayDrought(run(upto, row).slice(0, -1), row.date);
     if (dr && dr.n + 1 >= 4) add(nth(dr.n + 1), `Straight ${dr.day} game without a win`, `Last ${dr.day} win: ${shortDate(dr.since)}`);
   }
 
@@ -119,16 +123,17 @@ export function factsFor({ team, row, upto, detail, vs, since, goalie }) {
 // Pre-game facts for a rival's next game.
 export function nextFacts({ row, done, since }) {
   const out = [], S = seasonLabel(since);
-  const winless = trailing(done, (r) => r.res !== "W");
+  const season = run(done, row);
+  const winless = trailing(season, (r) => r.res !== "W");
   if (winless >= 3) out.push(`Winless in ${winless}`);
-  const place = trailing(done.filter((r) => r.home === row.home), (r) => r.res !== "W");
+  const place = trailing(season.filter((r) => r.home === row.home), (r) => r.res !== "W");
   if (place >= 3 && place !== winless) out.push(`Winless in ${place} straight ${row.home ? "at home" : "on the road"}`);
   const last = done[done.length - 1];
   if (last && daysBetween(last.date, row.date) === 1) {
     const { w, l } = b2bRecord(done);
     out.push(`2nd of a back-to-back${w + l >= 3 && l >= w ? `: ${w}–${l} in those since ${S}` : ""}`);
   }
-  const dr = weekdayDrought(done, row.date);
+  const dr = weekdayDrought(season, row.date);
   if (dr && dr.n >= 3) out.push(`Winless in ${dr.n} straight ${dr.day} games`);
   return out.slice(0, 2);
 }
@@ -139,9 +144,9 @@ export function factsForFav({ team, row, upto, detail, vs, since, goalie }) {
   const add = (big, l, s = "") => out.push({ big: String(big), l, s });
   const goals = detail.goals;
 
-  const streak = trailing(upto, (r) => r.res === "W");
+  const streak = trailing(run(upto, row), (r) => r.res === "W");
   if (streak >= 2) add(nth(streak), "Straight win");
-  const place = trailing(upto.filter((r) => r.home === row.home), (r) => r.res === "W");
+  const place = trailing(run(upto, row).filter((r) => r.home === row.home), (r) => r.res === "W");
   if (place >= 3 && place !== streak) add(nth(place), `Straight ${row.home ? "home" : "road"} win`);
 
   if (row.ga === 0) add(nth(upto.filter((r) => r.ga === 0).length), `Shutout since ${S}`, goalie ? `${goalie.saves} saves, ${goalie.name}` : "");
@@ -183,9 +188,10 @@ export function factsForFav({ team, row, upto, detail, vs, since, goalie }) {
 
 export function nextFactsFav({ row, done }) {
   const out = [];
-  const streak = trailing(done, (r) => r.res === "W");
+  const season = run(done, row);
+  const streak = trailing(season, (r) => r.res === "W");
   if (streak >= 2) out.push(`Won ${streak} straight`);
-  const place = trailing(done.filter((r) => r.home === row.home), (r) => r.res === "W");
+  const place = trailing(season.filter((r) => r.home === row.home), (r) => r.res === "W");
   if (place >= 3 && place !== streak) out.push(`Won ${place} straight ${row.home ? "at home" : "on the road"}`);
   return out.slice(0, 2);
 }
