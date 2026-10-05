@@ -161,7 +161,9 @@ export async function recent(rivals, favs, offset, limit) {
   const built = await Promise.all(page.map(async (c) => {
     try {
       const parts = await Promise.all(c.parts.map((p) => finishedGame(p.t, p.r.id, p.role)));
-      const rival = parts.find((g) => g.role === "rival"), fav = parts.find((g) => g.role === "fav");
+      // Two rivals meeting: cover the one that lost.
+      const rivals = parts.filter((g) => g.role === "rival").sort((x, y) => (y.os - y.rs) - (x.os - x.rs));
+      const rival = rivals[0], fav = parts.find((g) => g.role === "fav");
       if (rival && fav) return { key: `both-${c.id}`, role: "both", id: c.id, date: fav.date, rival, fav };
       if (rival && rival.os <= rival.rs && !rival.stats.length) return null; // rival won, nothing bad to say
       return rival || fav;

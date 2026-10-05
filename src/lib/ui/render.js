@@ -83,9 +83,13 @@ export function summaryEl(item) {
   const chips = [favG, rivalG].filter(Boolean).map((x) => `<span class="tm"><i style="background:${chip(x.rival)}"></i>${x.rival}</span>`).join("");
   const srText = goodNews(g) ? `${teamName(favG ? favG.rival : g.opp)} ${favG ? favG.rs : g.os}, ${teamName(rivalG ? rivalG.rival : g.opp)} ${rivalG ? rivalG.rs : favG.os}` : `${teamName(g.rival)} vs ${teamName(g.opp)}`;
   const deck = [rivalG?.deck, favG?.deck].filter(Boolean).join(" ");
-  const statBlocks = both
-    ? statsHTML(bothStats(rivalG.stats, favG.stats, r), false)
-    : statsHTML(g.stats, goodNews(g) && g.stats.length === 3);
+  const statList = both ? bothStats(rivalG.stats, favG.stats, r) : g.stats;
+  // A single stat sits beside the scoreline instead of taking a row of its own.
+  const lone = statList.length === 1 ? statList[0] : null;
+  const statBlocks = lone ? "" : statsHTML(statList, !both && goodNews(g) && statList.length === 3);
+  const top = lone
+    ? `<div class="slrow">${scoreline(rivalG, favG, r)}<div class="st side"><span class="n">${dashed(lone.big)}</span><span class="l">${lone.mark || ""}${esc(lone.l)}</span>${lone.s ? `<span class="s">${esc(lone.s)}</span>` : ""}</div></div>`
+    : scoreline(rivalG, favG, r);
   // Every goal goes in a compact scoring list; only the ones that matter get a drawing:
   // the winner, overtime, shorthanded, and each goal of a hat trick.
   const tally = new Map();
@@ -95,7 +99,7 @@ export function summaryEl(item) {
   const label = good ? (rows.length === 1 ? "The goal" : `${rows.length} goals`) : rows.length === 1 ? "The goal against" : `${rows.length} goals against`;
   el.innerHTML = `<div class="dl"><span class="mono">${dow}</span><span class="day">${day}</span><span class="mono">${mon}</span>${chips}</div>
     <div class="gbody"><div class="kick" style="display:flex;align-items:center;gap:8px">${newsMark(kind, r, 0.4)}${esc(g.kicker)}</div>
-    <h3 class="sr">${esc(srText)}</h3>${scoreline(rivalG, favG, r)}
+    <h3 class="sr">${esc(srText)}</h3>${top}
     ${deck ? `<p class="deck">${esc(deck)}</p>` : ""}
     ${statBlocks}
     ${rows.length ? `<div class="goals"><div class="multi"></div><div><div class="mono" style="margin-bottom:6px">${label}</div><ol class="glist ag"></ol></div></div>` : ""}</div>`;
@@ -194,7 +198,7 @@ const flapHTML = (str) => `<span class="flap" aria-hidden="true">${[...String(st
 // leader first. A final gets the pen: red circle on a beaten rival's score, blue circle on a winning
 // favorite's, and an arrow pointing at the game (red if a rival lost, else blue).
 export function sbRow(entries, status, animate = true) {
-  const rivalG = entries.find((e) => !isFav(e)), favG = entries.find(isFav);
+  const rivalG = entries.filter((e) => !isFav(e)).sort((x, y) => (y.os - y.rs) - (x.os - x.rs))[0], favG = entries.find(isFav);
   const g = rivalG || favG, r = rng(hash(g.id + "|live"));
   const fin = status.startsWith("Final"), delay = animate ? 0.1 : 0;
   let score;

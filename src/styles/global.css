@@ -160,6 +160,8 @@ svg.pending .rink path { stroke-dasharray: 3 5; }
 .st .l { font-family: var(--agate); font-size: 15px; line-height: 1.3; }
 .st .s { font-family: var(--agate); font-size: 13px; color: var(--mu); }
 .st.lead { grid-column: span 2; }
+.slrow { display: flex; align-items: center; gap: 18px 40px; flex-wrap: wrap; }
+.st.side { padding: 4px 0 4px 24px; border-left: 1px solid var(--ink); max-width: 320px; }
 .st.lead .n { font-size: clamp(46px, 5.6vw, 70px); }
 .st.lead .l { font-family: var(--serif); font-size: 20px; }
 @media (max-width: 760px) {
@@ -189,7 +191,8 @@ svg.pending .rink path { stroke-dasharray: 3 5; }
 .game.print .stats { animation: roll .9s cubic-bezier(.2, .8, .2, 1) both; animation-delay: .2s; }
 .game.print .multi figure { animation: roll .7s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(.35s + var(--k, 0) * .12s); }
 @keyframes reg { 0% { opacity: 0; filter: blur(1.4px); text-shadow: -5px 0 rgba(229, 83, 61, .75), 5px 1px rgba(90, 170, 230, .6); } 60% { opacity: 1; text-shadow: -1.5px 0 rgba(229, 83, 61, .6), 1.5px 0 rgba(90, 170, 230, .45); } 100% { filter: none; text-shadow: none; } }
-@keyframes roll { from { clip-path: inset(0 0 100% 0); opacity: .4; } to { clip-path: inset(0 0 0 0); opacity: 1; } }
+/* Ends with a margin outside the box so pen marks that overhang the edge aren't clipped. */
+@keyframes roll { from { clip-path: inset(-1em -1em 100% -1em); opacity: .4; } to { clip-path: inset(-1em -1em -1em -1em); opacity: 1; } }
 
 /* Red pen */
 .pw { position: relative; display: inline-block; }

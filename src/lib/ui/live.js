@@ -93,7 +93,9 @@ export function startLive(root, rivals, favs, { replayDate, at = 0, onFinals, ne
       shown.delete(id);
     }
     for (const [id, entries] of groups) {
-      const rivalE = entries.find((e) => e.role !== "fav"), favE = entries.find((e) => e.role === "fav");
+      // Two rivals meeting: lead with the one trailing; each one's goals against still get cards.
+      const rivalEs = entries.filter((e) => e.role !== "fav").sort((x, y) => (y.os - y.rs) - (x.os - x.rs));
+      const rivalE = rivalEs[0], favE = entries.find((e) => e.role === "fav");
       const primary = rivalE || favE;
       if (!shown.has(id)) {
         const row = document.createElement("div");
@@ -107,14 +109,17 @@ export function startLive(root, rivals, favs, { replayDate, at = 0, onFinals, ne
       const sig = `${status(primary)}|${primary.os}|${primary.rs}`;
       if (st.sig !== sig) { st.row.innerHTML = sbRow(entries, status(primary), !first); st.sig = sig; }
       if (!first && entries.reduce((n, e) => n + e.goals.length, 0) > prevGoals) st.row.querySelector(".flap b")?.classList.add("go");
-      for (const x of primary.goals) {
-        if (seen.has(`${id}-${x.id}`)) continue;
-        addCard(primary, x, !first, !first ? wall : replayDate ? wall - (100 - x.t) * 1000 : estWall(primary, x), rivalE && favE ? favE : undefined);
-        newGoal = true;
-        if (!first) sr.textContent = `${primary.role === "fav" ? "Goal for" : "Goal against"} ${primary.rival}: ${x.name}, ${ORD(x.per)} period ${x.clock}.`;
+      const sources = rivalEs.length ? rivalEs : [favE];
+      for (const src of sources) {
+        for (const x of src.goals) {
+          if (seen.has(`${id}-${x.id}`)) continue;
+          addCard(src, x, !first, !first ? wall : replayDate ? wall - (100 - x.t) * 1000 : estWall(src, x), favE && src.role !== "fav" ? favE : undefined);
+          newGoal = true;
+          if (!first) sr.textContent = `${src.role === "fav" ? "Goal for" : "Goal against"} ${src.rival}: ${x.name}, ${ORD(x.per)} period ${x.clock}.`;
+        }
       }
       // Goals taken back on review.
-      const ids = new Set(primary.goals.map((x) => String(x.id)));
+      const ids = new Set(sources.flatMap((e) => e.goals.map((x) => String(x.id))));
       feed.querySelectorAll(`[data-game="${id}"]`).forEach((c) => { if (!ids.has(c.dataset.goal)) { c.dataset.gone = "1"; c.remove(); seen.delete(`${id}-${c.dataset.goal}`); } });
     }
     first = false;
@@ -122,7 +127,7 @@ export function startLive(root, rivals, favs, { replayDate, at = 0, onFinals, ne
     // Finished games with good news (a rival lost, a favorite won) should appear in Recent.
     const finals = [];
     for (const [id, entries] of groups) {
-      const rivalE = entries.find((e) => e.role !== "fav"), favE = entries.find((e) => e.role === "fav");
+      const rivalE = entries.filter((e) => e.role !== "fav").sort((x, y) => (y.os - y.rs) - (x.os - x.rs))[0], favE = entries.find((e) => e.role === "fav");
       const e = rivalE || favE;
       if (!FINAL.has(e.state)) continue;
       if (rivalE && favE && favE.rs > favE.os) finals.push(`both-${id}`);
