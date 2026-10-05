@@ -85,6 +85,7 @@ export async function detail(id, team, side = "against") {
   for (const g of goals) {
     const gwg = final && scorerTotal > otherTotal && g.before[1] === otherTotal;
     g.sev = g.tag === "SH" || g.per >= 4 || (gwg && g.per >= 3) ? 60 : g.tag === "PP" || g.tag === "EN" || gwg ? 40 : 35;
+    if (gwg) g.gwg = true;
   }
   return {
     id, rival: team, opp: op.abbrev, home, state, date: pbp.gameDate, startUTC: pbp.startTimeUTC,

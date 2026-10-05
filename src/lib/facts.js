@@ -4,7 +4,7 @@
 // one-goal games, blowouts, weekday droughts).
 
 // Bump when rules change so cached game summaries are rebuilt.
-export const FACTS_VERSION = 7;
+export const FACTS_VERSION = 8;
 
 export const nth = (n) => n + (n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th");
 export const seasonLabel = (s) => `${s.slice(0, 4)}–${s.slice(6)}`;

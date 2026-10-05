@@ -42,7 +42,7 @@ src/
 - **Live cards**: text first; the drawing rolls in when tracking is published (retried each minute for 20 min). Each shows game time plus "N min ago", from when this browser first saw the goal (localStorage `hockei-goal-seen`), or "~N min ago" estimated from the start time for goals scored before the page opened.
 - **Replay for testing**: `/?replay=2026-09-29&at=40` replays that date's rival games on a compressed clock (`at` = start minute).
 - **Facts**: `facts.js` rules in priority order; the first four that apply are shown. Window is the current + previous season. Generic streaks (wins, winless, home/road, weekday, one-goal record) count only the current season and game type; records against one opponent and "since" counts may span seasons. Preseason is never loaded. Severity: SHG, any OT goal (the winner) or a late game-winner = 60 (pen marks), PPG/ENG/winner = 40, else 35.
-- **Tracking**: sprites appear a few minutes after a goal; live cards retry every 60 s (10 tries). Summaries load tracks when scrolled near and draw every goal in one shared crop.
+- **Tracking**: sprites appear a few minutes after a goal; live cards retry every 60 s (10 tries). Summaries list every goal in a compact scoring list and draw only the key ones (game winner, OT, SHG, hat-trick goals), loading tracks when scrolled near.
 - **Caching**: finished play-by-play and game summaries are cached in memory forever; schedules 5 min; live 10 s. API responses set `s-maxage` for Vercel's edge cache.
 
 ## Commands

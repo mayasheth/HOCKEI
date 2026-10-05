@@ -55,9 +55,15 @@ function scoreline(rivalG, favG, r) {
   const wv = favG ? circled(ws, r, 0.9, true) : ws, lv = rivalG ? circled(ls, r, 1.1) : ls;
   return `<div class="sl" aria-hidden="true"><span class="nm">${teamName(winner)}</span><span class="v">${wv}</span><span class="nm loser">${teamName(loser)}</span><span class="v">${lv}</span></div>`;
 }
-const statsHTML = (stats, lead, head) => stats.length
-  ? `${head || ""}<div class="stats">${stats.map((it, k) => `<div class="st${lead && k === 0 ? " lead" : ""}"><span class="n">${dashed(it.big)}</span><span class="l">${esc(it.l)}</span>${it.s ? `<span class="s">${esc(it.s)}</span>` : ""}</div>`).join("")}</div>`
+const statsHTML = (stats, lead) => stats.length
+  ? `<div class="stats">${stats.map((it, k) => `<div class="st${lead && k === 0 ? " lead" : ""}"><span class="n">${dashed(it.big)}</span><span class="l">${it.mark || ""}${esc(it.l)}</span>${it.s ? `<span class="s">${esc(it.s)}</span>` : ""}</div>`).join("")}</div>`
   : "";
+// "Both": one row of up to four stats, two from each side first, each marked bad (rival) or good (favorite).
+function bothStats(rivalStats, favStats, r) {
+  const bad = rivalStats.map((s) => ({ ...s, mark: newsMark("rival", r) + " " })), good = favStats.map((s) => ({ ...s, mark: newsMark("fav", r) + " " }));
+  const pick = [...bad.slice(0, 2), ...good.slice(0, 2)];
+  return [...pick, ...bad.slice(2), ...good.slice(2)].slice(0, 4);
+}
 
 export function summaryEl(item) {
   const both = item.role === "both";
@@ -78,27 +84,38 @@ export function summaryEl(item) {
   const srText = goodNews(g) ? `${teamName(favG ? favG.rival : g.opp)} ${favG ? favG.rs : g.os}, ${teamName(rivalG ? rivalG.rival : g.opp)} ${rivalG ? rivalG.rs : favG.os}` : `${teamName(g.rival)} vs ${teamName(g.opp)}`;
   const deck = [rivalG?.deck, favG?.deck].filter(Boolean).join(" ");
   const statBlocks = both
-    ? statsHTML(rivalG.stats, false, `<div class="mono sthead">${newsMark("rival", r)} ${teamName(rivalG.rival)}</div>`) + statsHTML(favG.stats, false, `<div class="mono sthead">${newsMark("fav", r)} ${teamName(favG.rival)}</div>`)
+    ? statsHTML(bothStats(rivalG.stats, favG.stats, r), false)
     : statsHTML(g.stats, goodNews(g) && g.stats.length === 3);
-  const label = rows.length === 1 ? (good ? "The goal" : "The goal against") : good ? `All ${rows.length} goals` : `All ${rows.length} goals against`;
+  // Every goal goes in a compact scoring list; only the ones that matter get a drawing:
+  // the winner, overtime, shorthanded, and each goal of a hat trick.
+  const tally = new Map();
+  rows.forEach((z) => tally.set(z.x.name, (tally.get(z.x.name) || 0) + 1));
+  const featured = (x) => x.gwg || x.sev >= 60 || tally.get(x.name) >= 3;
+  const why = (x) => (otWinner(x) ? "" : x.gwg ? "Winner" : x.tag === "SH" ? "" : tally.get(x.name) >= 3 ? "Hat trick" : "");
+  const label = good ? (rows.length === 1 ? "The goal" : `${rows.length} goals`) : rows.length === 1 ? "The goal against" : `${rows.length} goals against`;
   el.innerHTML = `<div class="dl"><span class="mono">${dow}</span><span class="day">${day}</span><span class="mono">${mon}</span>${chips}</div>
     <div class="gbody"><div class="kick" style="display:flex;align-items:center;gap:8px">${newsMark(kind, r, 0.4)}${esc(g.kicker)}</div>
     <h3 class="sr">${esc(srText)}</h3>${scoreline(rivalG, favG, r)}
     ${deck ? `<p class="deck">${esc(deck)}</p>` : ""}
     ${statBlocks}
-    ${rows.length ? `<div><div class="mono" style="margin-bottom:10px">${label}</div><div class="multi"></div></div>` : ""}</div>`;
-  const multi = el.querySelector(".multi"), ds = [];
+    ${rows.length ? `<div class="goals"><div class="multi"></div><div><div class="mono" style="margin-bottom:6px">${label}</div><ol class="glist ag"></ol></div></div>` : ""}</div>`;
+  const multi = el.querySelector(".multi"), list = el.querySelector(".glist"), ds = [];
   const pair = both ? [inks(favG.rival)[0], inks(rivalG.rival)[0]] : undefined;
   rows.forEach((z, k) => {
-    const x = z.x, big = x.sev >= 60, fig = document.createElement("figure");
+    const x = z.x, big = x.sev >= 60;
+    list.insertAdjacentHTML("beforeend", `<li><span class="t mono">${ORD(x.per)} ${x.clock}</span><span class="nm"><span class="pw">${esc(x.name)}${big ? penSVG("under2", r, "left:-2px;bottom:-6px;width:calc(100% + 4px);height:7px", 1.6, 1.2 + k * 0.1, good) : ""}</span>${tagOf(x) ? ` <span class="mono tag">${tagOf(x)}</span>` : ""}</span><span class="sc">${z.sc ? dashed(z.sc) : ""}</span></li>`);
+    if (!featured(x)) return;
+    const fig = document.createElement("figure");
     fig.className = "draw";
-    fig.style.setProperty("--k", k);
+    fig.style.setProperty("--k", ds.length);
     const dr = new GoalDrawing(g.rival, `Puck and skater paths before ${x.name}’s goal`, pair);
     ds.push([dr, x]);
     fig.appendChild(dr.el);
-    fig.insertAdjacentHTML("beforeend", `<figcaption><span class="mono" style="font-size:11px">${timeLine(x, r, 1.2, good).replace(/ · /, " ")}</span><span class="nm"><span class="pw">${esc(x.name)}${big ? penSVG("under2", r, "left:-2px;bottom:-7px;width:calc(100% + 4px);height:8px", 1.8, 1.2 + k * 0.12, good) : ""}</span></span>${z.sc ? `<span class="ag" style="font-size:13px;color:var(--mu)">${dashed(z.sc)}</span>` : ""}</figcaption>`);
+    const w = why(x);
+    fig.insertAdjacentHTML("beforeend", `<figcaption><span class="mono" style="font-size:11px">${timeLine(x, r, 1.2, good).replace(/ · /, " ")}${w ? ` · ${w}` : ""}</span><span class="nm">${esc(x.name)}</span></figcaption>`);
     multi.appendChild(fig);
   });
+  if (!ds.length) multi.remove();
   // Load tracking once the summary is near the screen, then draw every goal in one shared crop.
   // The defending team's skaters are drawn faintest.
   const defender = good ? g.opp : g.rival;
