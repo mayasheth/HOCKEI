@@ -1,84 +1,117 @@
 // HTML for the feed: game summaries, live goal cards and scoreboard rows.
-import { teamName, chip } from "../teams.js";
+// Each game entry has a role: "rival" (goals against, red pen) or "fav" (goals for, blue pen).
+// A favorite scoring on a rival is one "both" item carrying both entries.
+import { teamName, chip, inks } from "../teams.js";
 import { nth } from "../facts.js";
-import { esc, hash, rng, penSVG, circled, dashed } from "./pen.js";
+import { esc, hash, rng, penSVG, circled, dashed, newsMark } from "./pen.js";
 import { GoalDrawing, loadTrack, frameBox, onceVisible, reduceMotion } from "./draw.js";
 
 export const ORD = (per) => (per <= 3 ? ["1st", "2nd", "3rd"][per - 1] : per === 4 ? "OT" : `${per - 3}OT`);
 const STR = { PP: "PPG", SH: "SHG", EN: "ENG" };
 const mmss = (m) => { const s = Math.round(m * 60); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
+const isFav = (g) => g.role === "fav";
+// The news is good: a rival lost, or a favorite won.
 export const lost = (g) => g.os > g.rs;
+const goodNews = (g) => (isFav(g) ? g.rs > g.os : g.os > g.rs);
 
-// Running score after each goal against; shown only while the rival trails.
+// Running score after each listed goal; shown only while the news is good (rival trails, favorite leads).
 export function scoringRows(g) {
   const evs = [...g.goals.map((x) => ({ t: x.t, x })), ...g.ours.map((t) => ({ t, us: true }))].sort((a, b) => a.t - b.t || (a.us ? -1 : 1));
-  let rs = 0, os = 0;
-  const rows = [];
-  evs.forEach((e) => { if (e.us) { rs++; return; } os++; rows.push({ x: e.x, sc: os > rs ? `${g.opp} ${os}–${rs}` : "" }); });
+  let other = 0, scorer = 0;
+  const rows = [], leader = isFav(g) ? g.rival : g.opp;
+  evs.forEach((e) => { if (e.us) { other++; return; } scorer++; rows.push({ x: e.x, sc: scorer > other ? `${leader} ${scorer}–${other}` : "" }); });
   return rows;
 }
 
-// One line of context for a goal, from this game's own scoring sheet.
-// Overtime is sudden death, so any overtime goal against is the winner.
+// Overtime is sudden death, so any overtime goal is the winner.
 export const otWinner = (x) => x.per >= 4;
-const otTag = (r, delay) => `<span class="pw otmark">OT${penSVG("circle", r, "left:-.45em;top:-.3em;width:calc(100% + .9em);height:calc(100% + .6em)", 2, delay)}</span>`;
+const otTag = (r, delay, good) => `<span class="pw otmark">OT${penSVG("circle", r, "left:-.45em;top:-.3em;width:calc(100% + .9em);height:calc(100% + .6em)", 2, delay, good)}</span>`;
 
+// One line of context for a goal, from this game's own scoring sheet.
 export function goalContext(g, x) {
   const i = g.goals.indexOf(x), before = g.goals.slice(0, i), out = [];
   if (otWinner(x)) out.push(`Overtime winner, ${x.clock} in.`);
   const own = before.filter((y) => y.name === x.name).length;
   if (own) out.push(`${x.name}’s ${nth(own + 1)} of the night.`);
   const inPer = g.goals.slice(0, i + 1).filter((y) => y.per === x.per).length;
-  if (inPer >= 2 && !otWinner(x)) out.push(`${nth(inPer)} goal against in the ${x.per <= 3 ? ["first", "second", "third"][x.per - 1] + " period" : "overtime"}.`);
+  if (inPer >= 2 && !otWinner(x)) out.push(`${nth(inPer)} ${isFav(g) ? "goal" : "goal against"} in the ${["first", "second", "third"][x.per - 1]} period.`);
   const prev = before[before.length - 1];
   if (prev && x.t - prev.t < 3) out.push(`${mmss(x.t - prev.t)} after the last one.`);
   if (!out.length) out.push(i === 0 ? "Opening goal." : `${nth(i + 1)} of the night.`);
   return out.slice(0, 2).join(" ");
 }
-
-function scoreline(g, r) {
-  if (!lost(g)) return `<div class="sl won" aria-hidden="true"><span class="nm">${teamName(g.rival)}</span><span class="vs">vs</span><span class="nm">${teamName(g.opp)}</span></div>`;
-  return `<div class="sl" aria-hidden="true"><span class="nm">${teamName(g.opp)}</span><span class="v">${g.os}</span><span class="nm loser">${teamName(g.rival)}</span><span class="v">${circled(g.rs, r, 0.9)}</span></div>`;
-}
-const srScore = (g) => (lost(g) ? `${teamName(g.opp)} ${g.os}, ${teamName(g.rival)} ${g.rs}` : `${teamName(g.rival)} vs ${teamName(g.opp)}`);
 const tagOf = (x) => STR[x.tag] || "";
+const timeLine = (x, r, delay, good) => `${otWinner(x) ? `${otTag(r, delay, good)} · ${x.clock} · Winner` : `${ORD(x.per)} · ${x.clock}`}${tagOf(x) ? ` · ${tagOf(x)}` : ""}`;
 
-export function summaryEl(g) {
-  const r = rng(hash(g.key + "|sum"));
-  const d = new Date(`${g.date}T12:00:00Z`);
+/* ---------- Recent: game summaries ---------- */
+
+// Box-score scoreline, winner on top. Rival lost: red circle on its score. Favorite won: blue circle.
+// For "both", the favorite's score is circled blue and the rival's red.
+function scoreline(rivalG, favG, r) {
+  const g = rivalG || favG;
+  if (!goodNews(g)) return `<div class="sl won" aria-hidden="true"><span class="nm">${teamName(g.rival)}</span><span class="vs">vs</span><span class="nm">${teamName(g.opp)}</span></div>`;
+  const winner = favG ? favG.rival : g.opp, loser = rivalG ? rivalG.rival : g.opp;
+  const ws = favG ? favG.rs : g.os, ls = rivalG ? rivalG.rs : favG.os;
+  const wv = favG ? circled(ws, r, 0.9, true) : ws, lv = rivalG ? circled(ls, r, 1.1) : ls;
+  return `<div class="sl" aria-hidden="true"><span class="nm">${teamName(winner)}</span><span class="v">${wv}</span><span class="nm loser">${teamName(loser)}</span><span class="v">${lv}</span></div>`;
+}
+const statsHTML = (stats, lead, head) => stats.length
+  ? `${head || ""}<div class="stats">${stats.map((it, k) => `<div class="st${lead && k === 0 ? " lead" : ""}"><span class="n">${dashed(it.big)}</span><span class="l">${esc(it.l)}</span>${it.s ? `<span class="s">${esc(it.s)}</span>` : ""}</div>`).join("")}</div>`
+  : "";
+
+export function summaryEl(item) {
+  const both = item.role === "both";
+  const rivalG = both ? item.rival : item.role === "rival" ? item : null;
+  const favG = both ? item.fav : item.role === "fav" ? item : null;
+  const g = rivalG || favG, good = !rivalG;
+  const r = rng(hash(item.key + "|sum"));
+  const d = new Date(`${item.date}T12:00:00Z`);
   const [dow, mon, day] = [d.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" }), d.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" }), d.getUTCDate()];
-  const lead = lost(g) && g.stats.length === 3;
   const el = document.createElement("article");
-  el.className = "game" + (lost(g) ? "" : " won");
-  el.dataset.key = g.key;
-  el.dataset.date = g.date;
+  el.className = "game" + (goodNews(g) ? "" : " won");
+  el.dataset.key = item.key;
+  el.dataset.date = item.date;
+  // Goals drawn: goals against the rival (the favorite's goals, when it's both), else the favorite's goals.
   const rows = scoringRows(g);
-  el.innerHTML = `<div class="dl"><span class="mono">${dow}</span><span class="day">${day}</span><span class="mono">${mon}</span><span class="tm"><i style="background:${chip(g.rival)}"></i>${g.rival}</span></div>
-    <div class="gbody"><div class="kick">${esc(g.kicker)}</div>
-    <h3 class="sr">${esc(srScore(g))}</h3>${scoreline(g, r)}
-    ${g.deck ? `<p class="deck">${esc(g.deck)}</p>` : ""}
-    ${g.stats.length ? `<div class="stats">${g.stats.map((it, k) => `<div class="st${lead && k === 0 ? " lead" : ""}"><span class="n">${dashed(it.big)}</span><span class="l">${esc(it.l)}</span>${it.s ? `<span class="s">${esc(it.s)}</span>` : ""}</div>`).join("")}</div>` : ""}
-    ${rows.length ? `<div><div class="mono" style="margin-bottom:10px">${rows.length === 1 ? "The goal against" : `All ${rows.length} goals against`}</div><div class="multi"></div></div>` : ""}</div>`;
+  const kind = both ? "both" : good ? "fav" : "rival";
+  const chips = [favG, rivalG].filter(Boolean).map((x) => `<span class="tm"><i style="background:${chip(x.rival)}"></i>${x.rival}</span>`).join("");
+  const srText = goodNews(g) ? `${teamName(favG ? favG.rival : g.opp)} ${favG ? favG.rs : g.os}, ${teamName(rivalG ? rivalG.rival : g.opp)} ${rivalG ? rivalG.rs : favG.os}` : `${teamName(g.rival)} vs ${teamName(g.opp)}`;
+  const deck = [rivalG?.deck, favG?.deck].filter(Boolean).join(" ");
+  const statBlocks = both
+    ? statsHTML(rivalG.stats, false, `<div class="mono sthead">${newsMark("rival", r)} ${teamName(rivalG.rival)}</div>`) + statsHTML(favG.stats, false, `<div class="mono sthead">${newsMark("fav", r)} ${teamName(favG.rival)}</div>`)
+    : statsHTML(g.stats, goodNews(g) && g.stats.length === 3);
+  const label = rows.length === 1 ? (good ? "The goal" : "The goal against") : good ? `All ${rows.length} goals` : `All ${rows.length} goals against`;
+  el.innerHTML = `<div class="dl"><span class="mono">${dow}</span><span class="day">${day}</span><span class="mono">${mon}</span>${chips}</div>
+    <div class="gbody"><div class="kick" style="display:flex;align-items:center;gap:8px">${newsMark(kind, r, 0.4)}${esc(g.kicker)}</div>
+    <h3 class="sr">${esc(srText)}</h3>${scoreline(rivalG, favG, r)}
+    ${deck ? `<p class="deck">${esc(deck)}</p>` : ""}
+    ${statBlocks}
+    ${rows.length ? `<div><div class="mono" style="margin-bottom:10px">${label}</div><div class="multi"></div></div>` : ""}</div>`;
   const multi = el.querySelector(".multi"), ds = [];
+  const pair = both ? [inks(favG.rival)[0], inks(rivalG.rival)[0]] : undefined;
   rows.forEach((z, k) => {
-    const x = z.x, worst = x.sev >= 60, fig = document.createElement("figure");
+    const x = z.x, big = x.sev >= 60, fig = document.createElement("figure");
     fig.className = "draw";
     fig.style.setProperty("--k", k);
-    const dr = new GoalDrawing(g.rival, `Puck and skater paths before ${x.name}’s goal`);
+    const dr = new GoalDrawing(g.rival, `Puck and skater paths before ${x.name}’s goal`, pair);
     ds.push([dr, x]);
     fig.appendChild(dr.el);
-    fig.insertAdjacentHTML("beforeend", `<figcaption><span class="mono" style="font-size:11px">${otWinner(x) ? `${otTag(r, 1.2)} ${x.clock} · Winner` : `${ORD(x.per)} ${x.clock}`}${tagOf(x) ? ` · ${tagOf(x)}` : ""}</span><span class="nm"><span class="pw">${esc(x.name)}${worst ? penSVG("under2", r, "left:-2px;bottom:-7px;width:calc(100% + 4px);height:8px", 1.8, 1.2 + k * 0.12) : ""}</span></span>${z.sc ? `<span class="ag" style="font-size:13px;color:var(--mu)">${dashed(z.sc)}</span>` : ""}</figcaption>`);
+    fig.insertAdjacentHTML("beforeend", `<figcaption><span class="mono" style="font-size:11px">${timeLine(x, r, 1.2, good).replace(/ · /, " ")}</span><span class="nm"><span class="pw">${esc(x.name)}${big ? penSVG("under2", r, "left:-2px;bottom:-7px;width:calc(100% + 4px);height:8px", 1.8, 1.2 + k * 0.12, good) : ""}</span></span>${z.sc ? `<span class="ag" style="font-size:13px;color:var(--mu)">${dashed(z.sc)}</span>` : ""}</figcaption>`);
     multi.appendChild(fig);
   });
   // Load tracking once the summary is near the screen, then draw every goal in one shared crop.
+  // The defending team's skaters are drawn faintest.
+  const defender = good ? g.opp : g.rival;
   onceVisible(el, async () => {
     el.classList.add("print");
-    const tracks = await Promise.all(ds.map(([, x]) => loadTrack(x.ppt, g.rival)));
+    const tracks = await Promise.all(ds.map(([, x]) => loadTrack(x.ppt, defender)));
     const box = frameBox(tracks);
     ds.forEach(([dr], k) => { dr.setTrack(tracks[k], box); dr.play(1600, 300 + k * 200); });
   });
   return el;
 }
+
+/* ---------- Live: goal cards ---------- */
 
 // "12 min ago". Estimated times (goals scored before the page first saw them) get a "~".
 export function ago(at, approx) {
@@ -90,27 +123,38 @@ export function refreshAgo(root = document) {
   root.querySelectorAll(".ago").forEach((n) => (n.textContent = ago(+n.dataset.at, n.dataset.approx === "1")));
 }
 
-// Live goal card: text first; the drawing rolls in once NHL tracking is published
-// (usually several minutes after the goal). Retries every minute for 20 minutes.
-export function feedCard(g, x, isNew, at, approx) {
-  const r = rng(hash(`${g.key}|${x.id}|feed`)), worst = x.sev >= 60;
+// Live goal card: text first; the drawing rolls in once NHL tracking is published (usually several
+// minutes after the goal). Retries every minute for 20 minutes. `favG` is set when the goal is also
+// a favorite's goal against a rival ("both").
+export function feedCard(g, x, isNew, at, approx, favG) {
+  const both = !!favG && !isFav(g), good = isFav(g);
+  const r = rng(hash(`${g.key}|${x.id}|feed`)), big = x.sev >= 60;
   const z = scoringRows(g).find((q) => q.x === x);
   const el = document.createElement("article");
   el.className = "goal notrack" + (isNew ? " new" : "") + (otWinner(x) ? " otw" : "");
-  el.dataset.game = g.key;
+  el.dataset.game = String(g.id);
   el.dataset.goal = x.id;
+  const kind = both ? "both" : good ? "fav" : "rival";
+  const scorerTeam = good ? g.rival : g.opp;
+  const delay = isNew ? 0.9 : 0;
+  const head = good
+    ? `<div class="who"><span class="pw">Goal for${big ? penSVG("under2", r, "left:-2px;bottom:-10px;width:calc(100% + 4px);height:10px", 2.2, delay, true) : ""}</span> <span class="whoteam">${teamName(g.rival)}</span></div>`
+    : `<div class="who"><span class="pw">Goal against${big ? penSVG("under2", r, "left:-2px;bottom:-10px;width:calc(100% + 4px);height:10px", 2.2, delay) : ""}</span> <span class="whoteam">${teamName(g.rival)}</span></div>`
+      + (both ? `<div class="who2"><span class="pw">Goal for${penSVG("under2", r, "left:-2px;bottom:-6px;width:calc(100% + 4px);height:7px", 1.8, delay + 0.3, true)}</span> <span class="whoteam">${teamName(favG.rival)}</span></div>` : "");
   el.innerHTML = `<figure class="draw"></figure><div>
-    <div class="kick" style="display:flex;align-items:center;gap:8px;color:var(--ink2)"><i style="width:9px;height:9px;display:block;background:${chip(g.rival)}"></i>${g.rival} vs ${g.opp}<span class="mono ago" data-at="${at}" data-approx="${approx ? 1 : 0}">${ago(at, approx)}</span></div>
-    <div class="mono" style="margin-top:8px">${otWinner(x) ? `${otTag(r, isNew ? 0.6 : 0)} · ${x.clock} · Winner` : `${ORD(x.per)} · ${x.clock}`}${tagOf(x) ? ` · ${tagOf(x)}` : ""}</div>
-    <div class="who"><span class="pw">Goal against${worst ? penSVG("under2", r, "left:-2px;bottom:-10px;width:calc(100% + 4px);height:10px", 2.2, isNew ? 0.9 : 0) : ""}</span> <span class="whoteam">${teamName(g.rival)}</span></div>
-    <div class="by">${esc(x.name)} <span>${g.opp}</span></div>
+    <div class="kick" style="display:flex;align-items:center;gap:8px;color:var(--ink2)">${newsMark(kind, r, isNew ? 0.3 : 0)}<i style="width:9px;height:9px;display:block;background:${chip(g.rival)}"></i>${g.rival} vs ${g.opp}<span class="mono ago" data-at="${at}" data-approx="${approx ? 1 : 0}">${ago(at, approx)}</span></div>
+    <div class="mono" style="margin-top:8px">${timeLine(x, r, isNew ? 0.6 : 0, good)}</div>
+    ${head}
+    <div class="by">${esc(x.name)} <span>${scorerTeam}</span></div>
     <p class="ctx">${esc(goalContext(g, x))}</p>
     ${z && z.sc ? `<div class="ag" style="margin-top:10px;font-weight:700">${dashed(z.sc)}</div>` : ""}</div>`;
-  const dr = new GoalDrawing(g.rival, `Puck and skater paths before ${x.name}’s goal`);
+  const pair = both ? [inks(favG.rival)[0], inks(g.rival)[0]] : undefined;
+  const dr = new GoalDrawing(g.rival, `Puck and skater paths before ${x.name}’s goal`, pair);
   el.querySelector("figure").appendChild(dr.el);
+  const defender = good ? g.opp : g.rival;
   let tries = 0;
   const attempt = async () => {
-    const t = await loadTrack(x.ppt, g.rival);
+    const t = await loadTrack(x.ppt, defender);
     if (t) {
       const arriving = el.isConnected;
       el.classList.remove("notrack");
@@ -125,16 +169,25 @@ export function feedCard(g, x, isNew, at, approx) {
   return el;
 }
 
+/* ---------- Live: scoreboard rows ---------- */
+
 const flapHTML = (str) => `<span class="flap" aria-hidden="true">${[...String(str)].map((c) => `<b>${c}</b>`).join("")}</span>`;
 
-// Scoreboard row: score only while the rival trails (or lost); clock or status on the right.
-// A final the rival lost gets the pen: a circle on its score and an arrow pointing at the game.
-export function sbRow(g, status, animate = true) {
-  const r = rng(hash(g.key + "|live"));
+// One row per game. The score shows only while the news is good (rival trails, favorite leads),
+// leader first. A final gets the pen: red circle on a beaten rival's score, blue circle on a winning
+// favorite's, and an arrow pointing at the game (red if a rival lost, else blue).
+export function sbRow(entries, status, animate = true) {
+  const rivalG = entries.find((e) => !isFav(e)), favG = entries.find(isFav);
+  const g = rivalG || favG, r = rng(hash(g.id + "|live"));
   const fin = status.startsWith("Final"), delay = animate ? 0.1 : 0;
-  const score = g.os > g.rs
-    ? `<i>${teamName(g.opp)}</i> ${flapHTML(g.os)} <i>${teamName(g.rival)}</i> ${fin ? circled(g.rs, r, delay) : flapHTML(g.rs)}<span class="sr">${teamName(g.opp)} ${g.os}, ${teamName(g.rival)} ${g.rs}</span>`
-    : `<i>${teamName(g.rival)}</i> <span class="vs">vs</span> <i>${teamName(g.opp)}</i>`;
-  const arrow = fin && g.os > g.rs ? `<span class="pw sbarrow">${penSVG("arrow", r, "left:0;top:0;width:100%;height:100%", 2.4, delay + 0.6)}</span>` : "";
-  return `<span class="sq" style="background:${chip(g.rival)}"></span><span class="sc">${score}${arrow}</span><span class="mono">${esc(status)}</span>`;
+  let score;
+  if (goodNews(g)) {
+    const leader = favG ? favG.rival : g.opp, trailer = rivalG ? rivalG.rival : g.opp;
+    const ls = favG ? favG.rs : g.os, ts = rivalG ? rivalG.rs : favG.os;
+    const lv = fin && favG ? circled(ls, r, delay, true) : flapHTML(ls), tv = fin && rivalG ? circled(ts, r, delay + 0.2) : flapHTML(ts);
+    score = `<i>${teamName(leader)}</i> ${lv} <i>${teamName(trailer)}</i> ${tv}<span class="sr">${teamName(leader)} ${ls}, ${teamName(trailer)} ${ts}</span>`;
+  } else score = `<i>${teamName(g.rival)}</i> <span class="vs">${g.home === false ? "at" : "vs"}</span> <i>${teamName(g.opp)}</i>`;
+  const arrow = fin && goodNews(g) ? `<span class="pw sbarrow">${penSVG("arrow", r, "left:0;top:0;width:100%;height:100%", 2.4, delay + 0.6, !rivalG)}</span>` : "";
+  const sq = entries.map((e) => `<span class="sq" style="background:${chip(e.rival)}"></span>`).join("");
+  return `<span class="sqs">${sq}</span><span class="sc">${score}${arrow}</span><span class="mono">${esc(status)}</span>`;
 }

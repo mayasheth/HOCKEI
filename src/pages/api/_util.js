@@ -1,8 +1,13 @@
 // Shared helpers for HOCKEI API routes.
 const TEAM = /^[A-Z]{3}$/;
 
-export function rivalsParam(url) {
-  return [...new Set((url.searchParams.get("rivals") || "").toUpperCase().split(",").filter((t) => TEAM.test(t)))].slice(0, 32);
+export function rivalsParam(url, name = "rivals") {
+  return [...new Set((url.searchParams.get(name) || "").toUpperCase().split(",").filter((t) => TEAM.test(t)))].slice(0, 32);
+}
+// Favorites, minus any team also listed as a rival.
+export function favsParam(url) {
+  const r = new Set(rivalsParam(url));
+  return rivalsParam(url, "favs").filter((t) => !r.has(t));
 }
 
 export function json(body, { status = 200, maxAge = 60 } = {}) {

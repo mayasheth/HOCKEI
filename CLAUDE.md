@@ -13,7 +13,7 @@ Dark newsprint, red editor's pen marks only on the worst events, skater-trail dr
 src/
 ├── pages/
 │   ├── index.astro          # Feed: Live (scoreboard + time-ordered goal feed) and Recent games (6 at a time, load more); aside: Next, About
-│   ├── rivals.astro         # Pick rivals by division (localStorage)
+│   ├── rivals.astro         # Teams page: tap once for rival, twice for favorite (localStorage)
 │   └── api/
 │       ├── recent.js        # ?rivals=&offset=&limit= -> finished games with facts, newest first
 │       ├── live.js          # ?rivals=[&date=] -> today's (or that date's) rival games with goals against
@@ -25,7 +25,7 @@ src/
 ├── lib/
 │   ├── server/nhl.js        # Server fetch with UA + in-memory TTL cache
 │   ├── server/games.js      # schedule(), detail() (play-by-play -> goals against), finishedGame(), recent(), live(), next()
-│   ├── facts.js             # Fact engine (per-game stats + pre-game facts); absorbed the old curses
+│   ├── facts.js             # Fact engine: factsFor (rival misery), factsForFav (good news), pre-game facts; absorbed the old curses
 │   ├── teams.js             # 32 teams: name, division, two dark-paper inks (main ink first)
 │   ├── store.js             # localStorage rivals
 │   └── ui/
@@ -37,6 +37,7 @@ src/
 ```
 
 ## Key Behaviors
+- **Rivals and favorites**: each team is none, rival or favorite (`store.js`; Teams page cycles them). Rivals are covered by goals against and losses (red pen, red ✕ mark); favorites by goals for and wins (blue pen `--pen-good`, blue ✓). A favorite scoring on or beating a rival is one "both" item (both marks, two-colour puck: favorite ink + rival ink). Favorite losses are never shown; rival wins only when they carry a stat. API routes take `rivals=` and `favs=`; entries carry `role`.
 - **Live ("Tonight")**: a scoreboard row for every rival game today (start time, live clock, `2nd INT`, Final). Finished games stay with their goals, and also join Recent (today's results are overlaid from `score/now`, so the 5-min schedule cache doesn't delay them). A final the rival lost gets a pen circle and arrow. Polls `/api/live` every 20 s while games are live or in pre-game, 5 min otherwise; pauses when hidden. Goals from all games share one feed, newest first. Goals removed on review disappear.
 - **Live cards**: text first; the drawing rolls in when tracking is published (retried each minute for 20 min). Each shows game time plus "N min ago", from when this browser first saw the goal (localStorage `hockei-goal-seen`), or "~N min ago" estimated from the start time for goals scored before the page opened.
 - **Replay for testing**: `/?replay=2026-09-29&at=40` replays that date's rival games on a compressed clock (`at` = start minute).

@@ -50,8 +50,10 @@ export function loadTrack(ppt, rival) {
 }
 
 export class GoalDrawing {
-  constructor(rival, label) {
+  // inkPair overrides the puck's two colours (a favorite scoring on a rival uses one of each).
+  constructor(rival, label, inkPair) {
     this.rival = rival;
+    this.inkPair = inkPair;
     this.track = null;
     this.f = 0;
     this.el = document.createElementNS(NS, "svg");
@@ -69,7 +71,7 @@ export class GoalDrawing {
     if (!this.track) { this.layer.innerHTML = ""; return; }
     const cut = (pts) => pts.slice(0, Math.max(2, Math.round(pts.length * f)));
     const unit = this.box[2] / (this.el.clientWidth || 300);
-    const [a, b] = inks(this.rival), o = 1.2 * unit, puck = cut(this.track.puck);
+    const [a, b] = this.inkPair || inks(this.rival), o = 1.2 * unit, puck = cut(this.track.puck);
     let html = "";
     this.track.rival.forEach((p) => (html += `<path class="trk def" d="${smooth(cut(p))}"/>`));
     this.track.opp.forEach((p) => (html += `<path class="trk att" d="${smooth(cut(p))}"/>`));

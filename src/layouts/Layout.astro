@@ -15,7 +15,7 @@ const { title, activePage = "feed" } = Astro.props;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="description" content="Highly Optimized Coverage of Key Events (Impartial): every goal against the teams you love to hate." />
+    <meta name="description" content="Highly Optimized Coverage of Key Events (Impartial): every goal against the teams you love to hate, and every goal for the ones you love." />
     <meta name="theme-color" content="#121211" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -34,7 +34,7 @@ const { title, activePage = "feed" } = Astro.props;
           <nav aria-label="Main">
             <div class="chips" id="chips"></div>
             <a class="navlink" href="/" aria-current={activePage === "feed" ? "page" : undefined}>Feed</a>
-            <a class="navlink" href="/rivals" aria-current={activePage === "rivals" ? "page" : undefined}>Rivals</a>
+            <a class="navlink" href="/rivals" aria-current={activePage === "rivals" ? "page" : undefined}>Teams</a>
           </nav>
         </div>
         <div class="rule"></div><div class="rule" style="margin-top:-7px"></div>
@@ -42,14 +42,18 @@ const { title, activePage = "feed" } = Astro.props;
       <slot />
     </div>
     <script>
-      import { getSelectedRivals } from "../lib/store.js";
+      import { getSelectedRivals, getFavorites } from "../lib/store.js";
       import { chip } from "../lib/teams.js";
+      import { newsMark, rng } from "../lib/ui/pen.js";
 
       const today = document.getElementById("today");
       if (today) today.textContent = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
       function renderChips() {
         const el = document.getElementById("chips");
-        if (el) el.innerHTML = [...getSelectedRivals()].sort().map((t) => `<span class="chip"><i style="background:${chip(t)}"></i>${t}</span>`).join("");
+        if (!el) return;
+        const r = rng(3), favs = [...getFavorites()].sort(), rivals = [...getSelectedRivals()].sort();
+        const group = (ts: string[], role: string) => (ts.length ? `<span class="chipgrp">${newsMark(role, r)}${ts.map((t) => `<span class="chip"><i style="background:${chip(t)}"></i>${t}</span>`).join("")}</span>` : "");
+        el.innerHTML = group(favs, "fav") + group(rivals, "rival");
       }
       renderChips();
       window.addEventListener("rivals-changed", renderChips);

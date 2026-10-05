@@ -4,7 +4,7 @@
 // one-goal games, blowouts, weekday droughts).
 
 // Bump when rules change so cached game summaries are rebuilt.
-export const FACTS_VERSION = 4;
+export const FACTS_VERSION = 5;
 
 export const nth = (n) => n + (n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th");
 export const seasonLabel = (s) => `${s.slice(0, 4)}–${s.slice(6)}`;
@@ -130,5 +130,62 @@ export function nextFacts({ row, done, since }) {
   }
   const dr = weekdayDrought(done, row.date);
   if (dr && dr.n >= 3) out.push(`Winless in ${dr.n} straight ${dr.day} games`);
+  return out.slice(0, 2);
+}
+
+// Good news for a favorite's win: streaks, big nights, the goalie, comebacks.
+export function factsForFav({ team, row, upto, detail, vs, since, goalie }) {
+  const out = [], S = seasonLabel(since);
+  const add = (big, l, s = "") => out.push({ big: String(big), l, s });
+  const goals = detail.goals;
+
+  const streak = trailing(upto, (r) => r.res === "W");
+  if (streak >= 2) add(nth(streak), "Straight win");
+  const place = trailing(upto.filter((r) => r.home === row.home), (r) => r.res === "W");
+  if (place >= 3 && place !== streak) add(nth(place), `Straight ${row.home ? "home" : "road"} win`);
+
+  if (row.ga === 0) add(nth(upto.filter((r) => r.ga === 0).length), `Shutout since ${S}`, goalie ? `${goalie.saves} saves, ${goalie.name}` : "");
+  else if (goalie && goalie.shots >= 20 && goalie.sv >= 0.94) {
+    const best = goalie.since === null ? `His best since ${S}` : goalie.since ? `His best since ${shortDate(goalie.since)}` : "";
+    add(goalie.sv.toFixed(3).replace(/^0/, ""), `Save percentage, ${goalie.name}`, best || `${goalie.saves} saves on ${goalie.shots} shots`);
+  }
+
+  const by = new Map();
+  goals.forEach((g) => by.set(g.name, (by.get(g.name) || 0) + 1));
+  const [star, k] = [...by.entries()].sort((a, b) => b[1] - a[1])[0] || [];
+  if (k >= 2) add(k, `${star} goals`, k === 3 ? "Hat trick" : "");
+
+  if (row.gf >= 5) {
+    const prior = upto.slice(0, -1), prev = [...prior].reverse().find((r) => r.gf >= row.gf);
+    if (!prev) add(row.gf, `Goals, most since ${S}`);
+    else if (prior.length - prior.indexOf(prev) >= 15) add(row.gf, "Goals", `Most since ${shortDate(prev.date)}`);
+  }
+
+  const scored = new Map();
+  vs.forEach((d) => d.goals.forEach((g) => scored.set(g.scorerId, (scored.get(g.scorerId) || 0) + 1)));
+  const top = goals.filter((g) => g.scorerId).sort((a, b) => (scored.get(b.scorerId) || 0) - (scored.get(a.scorerId) || 0))[0];
+  if (top && scored.get(top.scorerId) >= 4) add(scored.get(top.scorerId), `${top.name} goals vs ${row.opp} since ${S}`, `In ${vs.length} meetings`);
+
+  const meet = upto.filter((r) => r.opp === row.opp).slice(-4);
+  const mw = meet.filter((r) => r.res === "W").length;
+  if (meet.length >= 3 && mw >= meet.length - 1) add(`${mw}–${meet.filter((r) => r.res === "L").length}–${meet.filter((r) => r.res === "O").length}`, `${team}, last ${meet.length} vs ${row.opp}`);
+
+  // Deck: a comeback, or the overtime winner.
+  let deck = "";
+  const evs = [...goals.map((g) => ({ t: g.t, us: 1 })), ...detail.ours.map((t) => ({ t }))].sort((a, b) => a.t - b.t);
+  let f = 0, a = 0, worst = 0, at = "";
+  for (const e of evs) { e.us ? f++ : a++; if (a - f > worst) { worst = a - f; at = `${f}–${a}`; } }
+  if (worst >= 2) deck = `Came back from ${at}.`;
+  const ot = goals.find((g) => g.per >= 4);
+  if (ot) deck = `${deck ? deck + " " : ""}${ot.name} won it ${ot.clock} into overtime.`;
+  return { stats: out.slice(0, 4), deck };
+}
+
+export function nextFactsFav({ row, done }) {
+  const out = [];
+  const streak = trailing(done, (r) => r.res === "W");
+  if (streak >= 2) out.push(`Won ${streak} straight`);
+  const place = trailing(done.filter((r) => r.home === row.home), (r) => r.res === "W");
+  if (place >= 3 && place !== streak) out.push(`Won ${place} straight ${row.home ? "at home" : "on the road"}`);
   return out.slice(0, 2);
 }

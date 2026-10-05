@@ -42,16 +42,17 @@ function seenTimes() {
 }
 function saveSeen(m) { try { localStorage.setItem(SEEN_KEY, JSON.stringify(m)); } catch { /* private mode */ } }
 
-export function startLive(root, rivals, { replayDate, at = 0, onFinals, next = () => [] }) {
-  const shown = new Map(); // key -> { g, row }
-  const seen = new Map(); // `${key}|${goalId}` -> card
+export function startLive(root, rivals, favs, { replayDate, at = 0, onFinals, next = () => [] }) {
+  const q = `rivals=${rivals.join(",")}&favs=${favs.join(",")}`;
+  const shown = new Map(); // game id -> { entries, row }
+  const seen = new Map(); // `${gameId}-${goalId}` -> card
   let first = true, timer = null, slateDate = null;
 
   root.innerHTML = `<div class="kick" id="liveKick">Live</div><div class="board" id="sb"></div><p class="sr" id="lvSr" aria-live="polite"></p><div class="feed" id="lvFeed"></div><div class="idle" id="lvIdle"></div>`;
   const sb = root.querySelector("#sb"), feed = root.querySelector("#lvFeed"), idle = root.querySelector("#lvIdle"), kick = root.querySelector("#liveKick"), sr = root.querySelector("#lvSr");
 
   function renderFrame() {
-    const any = shown.size > 0, live = [...shown.values()].some((s) => LIVE.has(s.g.state));
+    const any = shown.size > 0, live = [...shown.values()].some((s) => LIVE.has(s.entries[0].state));
     kick.innerHTML = live ? '<span class="livedot"></span>Live' : any ? slateLabel(slateDate) : "Live";
     sb.hidden = !any;
     feed.hidden = !feed.children.length;
@@ -64,67 +65,81 @@ export function startLive(root, rivals, { replayDate, at = 0, onFinals, next = (
   const firstSeen = replayDate ? {} : seenTimes();
   setInterval(() => refreshAgo(root), 30000);
 
-  function addCard(g, x, isNew, key) {
+  function addCard(g, x, isNew, key, favG) {
     const id = `${g.id}-${x.id}`;
     let at = firstSeen[id], approx = false;
     if (!at && isNew) at = firstSeen[id] = key;
     if (!at) { at = Math.min(key, Date.now()); approx = true; }
     if (!replayDate) saveSeen(firstSeen);
-    const card = feedCard(g, x, isNew, at, approx);
+    const card = feedCard(g, x, isNew, at, approx, favG);
     card._k = at;
     const before = [...feed.children].find((c) => c._k < at);
     feed.insertBefore(card, before || null);
-    seen.set(`${g.key}|${x.id}`, card);
+    seen.set(id, card);
   }
 
-  // Apply one snapshot of today's rival games. `wall` orders goals that arrive now.
+  // Apply one snapshot of today's games. Entries come per followed team (role rival or fav);
+  // a game with both becomes one row, and each of its goals one "both" card. `wall` orders new goals.
   function update(games, wall, date) {
     if (date) slateDate = date;
     let newGoal = false;
-    const keys = new Set(games.map((g) => g.key));
+    const groups = new Map();
+    games.forEach((g) => { if (!groups.has(g.id)) groups.set(g.id, []); groups.get(g.id).push(g); });
     // A new day: yesterday's games drop off.
-    for (const [key, st] of shown) {
-      if (keys.has(key)) continue;
+    for (const [id, st] of shown) {
+      if (groups.has(id)) continue;
       st.row.remove();
-      feed.querySelectorAll(`[data-game="${key}"]`).forEach((c) => { c.dataset.gone = "1"; c.remove(); });
-      shown.delete(key);
+      feed.querySelectorAll(`[data-game="${id}"]`).forEach((c) => { c.dataset.gone = "1"; c.remove(); });
+      shown.delete(id);
     }
-    for (const g of games) {
-      if (!shown.has(g.key)) {
+    for (const [id, entries] of groups) {
+      const rivalE = entries.find((e) => e.role !== "fav"), favE = entries.find((e) => e.role === "fav");
+      const primary = rivalE || favE;
+      if (!shown.has(id)) {
         const row = document.createElement("div");
         row.className = "sbrow";
         sb.appendChild(row);
-        shown.set(g.key, { g, row });
+        shown.set(id, { entries, row });
       }
-      const st = shown.get(g.key), prevOs = st.g.os;
-      st.g = g;
+      const st = shown.get(id), prevGoals = st.entries.reduce((n, e) => n + e.goals.length, 0);
+      st.entries = entries;
       // Re-render only on change, so pen marks don't redraw on every poll.
-      const sig = `${status(g)}|${g.os}|${g.rs}`;
-      if (st.sig !== sig) { st.row.innerHTML = sbRow(g, status(g), !first); st.sig = sig; }
-      if (!first && g.os > prevOs) st.row.querySelector(".flap b")?.classList.add("go");
-      for (const x of g.goals) {
-        if (seen.has(`${g.key}|${x.id}`)) continue;
-        addCard(g, x, !first, !first ? wall : replayDate ? wall - (100 - x.t) * 1000 : estWall(g, x));
+      const sig = `${status(primary)}|${primary.os}|${primary.rs}`;
+      if (st.sig !== sig) { st.row.innerHTML = sbRow(entries, status(primary), !first); st.sig = sig; }
+      if (!first && entries.reduce((n, e) => n + e.goals.length, 0) > prevGoals) st.row.querySelector(".flap b")?.classList.add("go");
+      for (const x of primary.goals) {
+        if (seen.has(`${id}-${x.id}`)) continue;
+        addCard(primary, x, !first, !first ? wall : replayDate ? wall - (100 - x.t) * 1000 : estWall(primary, x), rivalE && favE ? favE : undefined);
         newGoal = true;
-        if (!first) sr.textContent = `Goal against ${g.rival}: ${x.name}, ${ORD(x.per)} period ${x.clock}.`;
+        if (!first) sr.textContent = `${primary.role === "fav" ? "Goal for" : "Goal against"} ${primary.rival}: ${x.name}, ${ORD(x.per)} period ${x.clock}.`;
       }
       // Goals taken back on review.
-      const ids = new Set(g.goals.map((x) => String(x.id)));
-      feed.querySelectorAll(`[data-game="${g.key}"]`).forEach((c) => { if (!ids.has(c.dataset.goal)) { c.dataset.gone = "1"; c.remove(); seen.delete(`${g.key}|${c.dataset.goal}`); } });
+      const ids = new Set(primary.goals.map((x) => String(x.id)));
+      feed.querySelectorAll(`[data-game="${id}"]`).forEach((c) => { if (!ids.has(c.dataset.goal)) { c.dataset.gone = "1"; c.remove(); seen.delete(`${id}-${c.dataset.goal}`); } });
     }
     first = false;
     renderFrame();
-    const finals = games.filter((g) => FINAL.has(g.state)).map((g) => g.key);
+    // Finished games with good news (a rival lost, a favorite won) should appear in Recent.
+    const finals = [];
+    for (const [id, entries] of groups) {
+      const rivalE = entries.find((e) => e.role !== "fav"), favE = entries.find((e) => e.role === "fav");
+      const e = rivalE || favE;
+      if (!FINAL.has(e.state)) continue;
+      if (rivalE && favE && favE.rs > favE.os) finals.push(`both-${id}`);
+      else if (rivalE && rivalE.os > rivalE.rs) finals.push(`rival-${rivalE.rival}-${id}`);
+      else if (!rivalE && favE.rs > favE.os) finals.push(`fav-${favE.rival}-${id}`);
+    }
     if (finals.length) onFinals?.(finals);
     return newGoal;
   }
+
 
   if (!replayDate) {
     const poll = async () => {
       clearTimeout(timer);
       let any = false;
       try {
-        const res = await fetch(`/api/live?rivals=${rivals.join(",")}`);
+        const res = await fetch(`/api/live?${q}`);
         if (res.ok) { const d = await res.json(); update(d.games, Date.now(), d.date); any = d.anyLive || d.games.some((g) => g.state === "PRE"); }
       } catch { /* keep the last snapshot */ }
       if (!document.hidden) timer = setTimeout(poll, any ? 20000 : 300000);
@@ -135,7 +150,7 @@ export function startLive(root, rivals, { replayDate, at = 0, onFinals, next = (
   }
 
   // Replay: run a past night on a compressed clock (7-minute intermissions, staggered puck drops).
-  fetch(`/api/live?rivals=${rivals.join(",")}&date=${replayDate}`).then((r) => r.json()).then((d) => {
+  fetch(`/api/live?${q}&date=${replayDate}`).then((r) => r.json()).then((d) => {
     const games = d.games.filter((g) => FINAL.has(g.state));
     const t0 = Math.min(...games.map((g) => Date.parse(g.startUTC)));
     const INT = 7;
@@ -160,7 +175,8 @@ export function startLive(root, rivals, { replayDate, at = 0, onFinals, next = (
         const st = c.pre ? "PRE" : c.fin ? "OFF" : "LIVE";
         const left = c.per ? (c.per <= 3 ? 20 * c.per - t : 0) : 0;
         const label = c.pre ? "Pre-game" : c.fin ? (g.lp === "OT" ? "Final · OT" : g.lp === "SO" ? "Final · SO" : "Final") : c.int ? `${ORD(c.int)} INT` : c.per === 4 ? `OT · ${Math.floor(65 - t)}:${String(Math.round(((65 - t) % 1) * 60) % 60).padStart(2, "0")}` : `${ORD(c.per)} · ${Math.floor(left)}:${String(Math.round((left % 1) * 60) % 60).padStart(2, "0")}`;
-        return { ...g, state: st, status: label, goals, ours, os: c.fin ? g.os : goals.length, rs: c.fin ? g.rs : ours.length };
+        const fav = g.role === "fav";
+        return { ...g, state: st, status: label, goals, ours, os: c.fin ? g.os : fav ? ours.length : goals.length, rs: c.fin ? g.rs : fav ? goals.length : ours.length };
       });
       const hold = update(frame, Date.now(), replayDate);
       if (frame.every((g) => g.state === "OFF")) return;

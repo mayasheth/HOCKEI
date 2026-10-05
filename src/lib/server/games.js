@@ -1,6 +1,7 @@
-// Rival game data from the NHL API: schedules, per-game scoring sheets, and the fact engine.
+// Rival and favorite game data from the NHL API: schedules, per-game scoring sheets, and the fact engine.
+// Rivals are covered through goals against and losses; favorites through goals for and wins.
 import { api, cached, isFinal, isLive } from "./nhl.js";
-import { factsFor, nextFacts, FACTS_VERSION } from "../facts.js";
+import { factsFor, factsForFav, nextFacts, nextFactsFav, FACTS_VERSION } from "../facts.js";
 
 const tmin = (per, clock) => {
   const [m, s] = clock.split(":").map(Number);
@@ -47,48 +48,55 @@ async function playByPlay(id) {
   return p;
 }
 
-export async function detail(id, team) {
+// One game's scoring sheet from `team`'s side. side "against": `goals` are the goals it allowed
+// and `ours` its own goal times (rival coverage). side "for": `goals` are its own goals and `ours`
+// the opponent's goal times (favorite coverage). rs/os are always team/opponent scores.
+export async function detail(id, team, side = "against") {
   const pbp = await playByPlay(id);
   const home = pbp.homeTeam.abbrev === team;
   const me = home ? pbp.homeTeam : pbp.awayTeam, op = home ? pbp.awayTeam : pbp.homeTeam;
   const names = new Map(pbp.rosterSpots.map((r) => [r.playerId, [r.firstName.default, r.lastName.default]]));
   const goals = [], ours = [];
-  let rs = 0, os = 0;
+  let mine = 0, theirs = 0;
   for (const e of pbp.plays) {
     if (e.typeDescKey !== "goal" || e.periodDescriptor.periodType === "SO") continue;
     const per = e.periodDescriptor.number, t = tmin(per, e.timeInPeriod), d = e.details || {};
-    if (d.eventOwnerTeamId === me.id) { rs++; ours.push(t); continue; }
-    // situationCode: away goalie, away skaters, home skaters, home goalie
+    const byTeam = d.eventOwnerTeamId === me.id;
+    if (byTeam !== (side === "for")) { byTeam ? mine++ : theirs++; ours.push(t); continue; }
+    // situationCode: away goalie, away skaters, home skaters, home goalie. Tag from the scorer's side.
     const sit = e.situationCode || "1551";
-    const en = (home ? sit[3] : sit[0]) === "0";
-    const mine = +(home ? sit[2] : sit[1]), theirs = +(home ? sit[1] : sit[2]);
-    const tag = en ? "EN" : theirs > mine ? "PP" : theirs < mine ? "SH" : "";
+    const scorerHome = byTeam ? home : !home;
+    const en = (scorerHome ? sit[0] : sit[3]) === "0";
+    const sk = +(scorerHome ? sit[2] : sit[1]), def = +(scorerHome ? sit[1] : sit[2]);
+    const tag = en ? "EN" : sk > def ? "PP" : sk < def ? "SH" : "";
     const scorer = names.get(d.scoringPlayerId) || ["", "Unknown"];
     const goalie = names.get(d.goalieInNetId);
     goals.push({
       id: e.eventId, per, t, clock: shortClock(e.timeInPeriod), name: scorer[1], scorerId: d.scoringPlayerId,
-      goalie: goalie ? goalie[1] : null, tag, ppt: e.pptReplayUrl || null, before: [rs, os],
+      goalie: goalie ? goalie[1] : null, tag, ppt: e.pptReplayUrl || null, before: side === "for" ? [theirs, mine] : [mine, theirs],
     });
-    os++;
+    byTeam ? mine++ : theirs++;
   }
   const state = pbp.gameState, lp = pbp.gameOutcome?.lastPeriodType || pbp.periodDescriptor?.periodType || "REG";
   const final = isFinal(state);
-  // Severity: shorthanded, or the winner late, is the worst; power play, empty net or any winner next.
+  // Severity: shorthanded, overtime, or a late winner is the biggest; power play, empty net or any winner next.
+  // before = [other side's goals, scoring side's goals] at the time of the goal.
+  const scorerTotal = side === "for" ? mine : theirs, otherTotal = side === "for" ? theirs : mine;
   for (const g of goals) {
-    const gwg = final && os > rs && g.before[1] === rs;
+    const gwg = final && scorerTotal > otherTotal && g.before[1] === otherTotal;
     g.sev = g.tag === "SH" || g.per >= 4 || (gwg && g.per >= 3) ? 60 : g.tag === "PP" || g.tag === "EN" || gwg ? 40 : 35;
   }
   return {
     id, rival: team, opp: op.abbrev, home, state, date: pbp.gameDate, startUTC: pbp.startTimeUTC,
-    rs: me.score ?? rs, os: op.score ?? os, lp, period: pbp.periodDescriptor?.number || 0,
+    rs: me.score ?? mine, os: op.score ?? theirs, lp, period: pbp.periodDescriptor?.number || 0,
     clock: pbp.clock || null, goals, ours,
   };
 }
 
-// The rival goalie who faced the most shots, with his save percentage and the last time
-// (as a starter facing 10+ shots) he did as badly or worse. lowestSince: a date, null if never
-// in the window, "" if it happened within his last 10 starts (not worth saying).
-async function goalieLine(id, team, date, seasons) {
+// The team's goalie who faced the most shots, with his save percentage and the last time
+// (as a starter facing 10+ shots) he did as badly or worse (or, with best, as well or better).
+// since: a date, null if never in the window, "" if it happened within his last 10 starts.
+async function goalieLine(id, team, date, seasons, best = false) {
   const box = await cached(`box:${id}`, Infinity, () => api(`gamecenter/${id}/boxscore`, 60));
   const side = box.homeTeam.abbrev === team ? "homeTeam" : "awayTeam";
   const g = [...(box.playerByGameStats?.[side]?.goalies || [])].sort((a, b) => (b.shotsAgainst || 0) - (a.shotsAgainst || 0))[0];
@@ -96,11 +104,9 @@ async function goalieLine(id, team, date, seasons) {
   const sv = g.saves / g.shotsAgainst;
   const logs = await Promise.all(seasons.map((s) => api(`player/${g.playerId}/game-log/${s}/2`, 86400).then((d) => d.gameLog || []).catch(() => [])));
   const starts = logs.flat().filter((x) => x.gamesStarted && x.shotsAgainst >= 10 && x.gameDate < date).sort((a, b) => b.gameDate.localeCompare(a.gameDate));
-  const k = starts.findIndex((x) => x.savePctg <= sv);
-  return {
-    name: g.name.default.replace(/^.*?\.\s*/, ""), sv, saves: g.saves, shots: g.shotsAgainst,
-    lowestSince: k === -1 ? (starts.length >= 10 ? null : "") : k >= 10 ? starts[k].gameDate : "",
-  };
+  const k = starts.findIndex((x) => (best ? x.savePctg >= sv : x.savePctg <= sv));
+  const since = k === -1 ? (starts.length >= 10 ? null : "") : k >= 10 ? starts[k].gameDate : "";
+  return { name: g.name.default.replace(/^.*?\.\s*/, ""), sv, saves: g.saves, shots: g.shotsAgainst, lowestSince: since, since };
 }
 
 const kickerFor = (row, rows) => {
@@ -112,71 +118,94 @@ const kickerFor = (row, rows) => {
   return parts.join(" · ");
 };
 
-// A finished rival game, ready to render: scoring sheet, kicker, and up to four facts.
-export async function finishedGame(team, id) {
-  return cached(`game:v${FACTS_VERSION}:${team}:${id}`, Infinity, async () => {
+const strip = (goals) => goals.map(({ before, scorerId, goalie, ...g }) => g);
+
+// A finished game, ready to render: scoring sheet, kicker, and up to four facts.
+// role "rival": goals against and misery stats. role "fav": goals for and good-news stats.
+export async function finishedGame(team, id, role = "rival") {
+  return cached(`game:v${FACTS_VERSION}:${role}:${team}:${id}`, Infinity, async () => {
+    const side = role === "fav" ? "for" : "against";
     const sch = await schedule(team);
     const idx = sch.rows.findIndex((r) => r.id === id);
-    const row = sch.rows[idx], d = await detail(id, team);
+    const row = sch.rows[idx], d = await detail(id, team, side);
     const upto = sch.rows.slice(0, idx + 1).filter((r) => r.res);
     // Previous meetings with this opponent, for "goals vs" facts.
     const meetings = upto.filter((r) => r.opp === row.opp).slice(-8);
-    const vs = await Promise.all(meetings.map((r) => (r.id === id ? d : detail(r.id, team))));
-    const goalie = await goalieLine(id, team, row.date, [sch.previous, sch.current].filter(Boolean)).catch(() => null);
-    const { stats, deck } = factsFor({ team, row, upto, detail: d, vs, since: sch.previous || sch.current, goalie });
+    const vs = await Promise.all(meetings.map((r) => (r.id === id ? d : detail(r.id, team, side))));
+    const goalie = await goalieLine(id, team, row.date, [sch.previous, sch.current].filter(Boolean), role === "fav").catch(() => null);
+    const args = { team, row, upto, detail: d, vs, since: sch.previous || sch.current, goalie };
+    const { stats, deck } = role === "fav" ? factsForFav(args) : factsFor(args);
     return {
-      key: `${team}-${id}`, id, rival: team, opp: row.opp, date: row.date, kicker: kickerFor(row, sch.rows),
-      rs: d.rs, os: d.os, goals: d.goals.map(({ before, scorerId, goalie, ...g }) => g), ours: d.ours, stats, deck,
+      key: `${role}-${team}-${id}`, role, id, rival: team, opp: row.opp, date: row.date, kicker: kickerFor(row, sch.rows),
+      rs: d.rs, os: d.os, goals: strip(d.goals), ours: d.ours, stats, deck,
     };
   });
 }
 
-// Finished games for these rivals, newest first, paged.
-export async function recent(rivals, offset, limit) {
-  const all = [];
-  for (const t of rivals) {
-    const sch = await schedule(t);
-    sch.rows.filter((r) => r.res).forEach((r) => all.push({ t, r }));
-  }
-  all.sort((a, b) => b.r.startUTC.localeCompare(a.r.startUTC) || a.t.localeCompare(b.t));
-  const page = all.slice(offset, offset + limit);
-  const games = await Promise.all(page.map(({ t, r }) => finishedGame(t, r.id).catch((e) => ({ key: `${t}-${r.id}`, error: String(e) }))));
-  return { games: games.filter((g) => !g.error), total: all.length };
+// Finished games newest first, paged over candidates: rival losses, favorite wins, and rival
+// wins that still carry a bad stat. A favorite beating a rival is one "both" item.
+// Favorite losses are never shown.
+export async function recent(rivals, favs, offset, limit) {
+  const byGame = new Map();
+  const add = (t, r, role) => {
+    if (!byGame.has(r.id)) byGame.set(r.id, { id: r.id, startUTC: r.startUTC, parts: [] });
+    byGame.get(r.id).parts.push({ t, r, role });
+  };
+  for (const t of rivals) (await schedule(t)).rows.filter((r) => r.res).forEach((r) => add(t, r, "rival"));
+  for (const t of favs) (await schedule(t)).rows.filter((r) => r.res === "W").forEach((r) => add(t, r, "fav"));
+  // A favorite's win over a rival leaves the rival's row as a loss; a rival's win over a favorite is dropped.
+  const cands = [...byGame.values()].filter((c) => !(c.parts.length === 1 && c.parts[0].role === "rival" && c.parts[0].r.res === "W" && favs.includes(c.parts[0].r.opp)));
+  cands.sort((a, b) => b.startUTC.localeCompare(a.startUTC) || a.id - b.id);
+  const page = cands.slice(offset, offset + limit);
+  const built = await Promise.all(page.map(async (c) => {
+    try {
+      const parts = await Promise.all(c.parts.map((p) => finishedGame(p.t, p.r.id, p.role)));
+      const rival = parts.find((g) => g.role === "rival"), fav = parts.find((g) => g.role === "fav");
+      if (rival && fav) return { key: `both-${c.id}`, role: "both", id: c.id, date: fav.date, rival, fav };
+      if (rival && rival.os <= rival.rs && !rival.stats.length) return null; // rival won, nothing bad to say
+      return rival || fav;
+    } catch { return null; }
+  }));
+  return { games: built.filter(Boolean), nextOffset: offset + page.length, total: cands.length };
 }
 
-// Tonight's (or a given date's) rival games, as scoring sheets.
+// Tonight's (or a given date's) games for followed teams, as scoring sheets: one entry per followed
+// team per game (role "rival" lists goals against, role "fav" goals for).
 // The NHL's "now" scoreboard keeps last night's slate until well into the next day. Once every
 // game on it is over and Eastern time has moved to a new date, switch to today's slate.
 const easternDate = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date());
 
-export async function live(rivals, date) {
+export async function live(rivals, favs, date) {
   let day = await api(`score/${date || "now"}`, date ? 3600 : 10);
   const today = easternDate();
   if (!date && day.currentDate < today && (day.games || []).every((g) => isFinal(g.gameState))) day = await api(`score/${today}`, 60);
   const out = [];
   for (const g of day.games || []) {
     for (const t of [g.homeTeam.abbrev, g.awayTeam.abbrev]) {
-      if (!rivals.includes(t)) continue;
+      const role = rivals.includes(t) ? "rival" : favs.includes(t) ? "fav" : null;
+      if (!role) continue;
+      const base = { key: `${role}-${t}-${g.id}`, role, id: g.id, rival: t, home: t === g.homeTeam.abbrev, opp: t === g.homeTeam.abbrev ? g.awayTeam.abbrev : g.homeTeam.abbrev };
       if (g.gameState === "FUT" || g.gameState === "PRE") {
-        out.push({ key: `${t}-${g.id}`, id: g.id, rival: t, home: t === g.homeTeam.abbrev, opp: t === g.homeTeam.abbrev ? g.awayTeam.abbrev : g.homeTeam.abbrev, state: g.gameState, startUTC: g.startTimeUTC, rs: 0, os: 0, goals: [], ours: [] });
+        out.push({ ...base, state: g.gameState, startUTC: g.startTimeUTC, rs: 0, os: 0, goals: [], ours: [] });
         continue;
       }
-      const d = await detail(g.id, t);
-      out.push({ key: `${t}-${g.id}`, ...d, goals: d.goals.map(({ before, scorerId, goalie, ...x }) => x) });
+      const d = await detail(g.id, t, role === "fav" ? "for" : "against");
+      out.push({ ...d, ...base, goals: strip(d.goals) });
     }
   }
   return { date: date || (day.currentDate < today ? day.currentDate : today), games: out, anyLive: out.some((g) => isLive(g.state)) };
 }
 
-// Each rival's next game, with pre-game facts.
-export async function next(rivals) {
+// Each followed team's next game, with pre-game facts.
+export async function next(rivals, favs) {
   const out = [];
-  for (const t of rivals) {
+  for (const [t, role] of [...rivals.map((t) => [t, "rival"]), ...favs.map((t) => [t, "fav"])]) {
     const sch = await schedule(t);
     const i = sch.rows.findIndex((r) => r.state === "FUT" || r.state === "PRE");
     if (i < 0) continue;
     const row = sch.rows[i], done = sch.rows.slice(0, i).filter((r) => r.res);
-    out.push({ rival: t, opp: row.opp, home: row.home, date: row.date, startUTC: row.startUTC, facts: nextFacts({ row, done, since: sch.previous || sch.current }) });
+    const args = { row, done, since: sch.previous || sch.current };
+    out.push({ rival: t, role, opp: row.opp, home: row.home, date: row.date, startUTC: row.startUTC, facts: role === "fav" ? nextFactsFav(args) : nextFacts(args) });
   }
   return out.sort((a, b) => a.startUTC.localeCompare(b.startUTC));
 }

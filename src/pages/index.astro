@@ -5,8 +5,8 @@ import Layout from "../layouts/Layout.astro";
 <Layout title="HOCKEI" activePage="feed">
   <div id="empty" class="sec" style="margin-top:26px" hidden>
     <div class="kick">Your rivals</div>
-    <p class="deck">Pick the teams you love to hate. Every goal against them will be covered here.</p>
-    <p><a class="more" href="/rivals" style="display:inline-flex;align-items:center;text-decoration:none">Choose rivals</a></p>
+    <p class="deck">Pick the teams you love to hate, and the ones you love. Every goal against your rivals and every goal for your favorites will be covered here.</p>
+    <p><a class="more" href="/rivals" style="display:inline-flex;align-items:center;text-decoration:none">Choose teams</a></p>
   </div>
   <div class="grid" id="page" hidden>
     <main>
@@ -19,38 +19,37 @@ import Layout from "../layouts/Layout.astro";
     </main>
     <aside>
       <section class="ag" aria-labelledby="nextH"><div class="kick" id="nextH">Next</div><div id="next" style="display:flex;flex-direction:column;gap:10px"></div></section>
-      <section class="ag" style="color:var(--mu);font-size:13px"><div class="kick" style="color:var(--ink)">About the drawings</div>The 14 seconds before each goal against, from NHL tracking data. The coloured line is the puck. The grey lines are the skaters.</section>
+      <section class="ag" style="color:var(--mu);font-size:13px"><div class="kick" style="color:var(--ink)">About the drawings</div>The 14 seconds before each goal against, from NHL tracking data. The colored line is the puck. The grey lines are the skaters.</section>
     </aside>
   </div>
 </Layout>
 
 <script>
-  import { getSelectedRivals } from "../lib/store.js";
+  import { getSelectedRivals, getFavorites } from "../lib/store.js";
   import { summaryEl } from "../lib/ui/render.js";
   import { startLive } from "../lib/ui/live.js";
-  import { esc } from "../lib/ui/pen.js";
+  import { esc, newsMark, rng } from "../lib/ui/pen.js";
   import { chip } from "../lib/teams.js";
 
   const PAGE = 6;
-  const rivals = [...getSelectedRivals()].sort();
+  const rivals = [...getSelectedRivals()].sort(), favs = [...getFavorites()].sort();
+  const q = `rivals=${rivals.join(",")}&favs=${favs.join(",")}`;
   const params = new URLSearchParams(location.search);
 
-  if (!rivals.length) {
+  if (!rivals.length && !favs.length) {
     document.getElementById("empty")!.hidden = false;
   } else {
     document.getElementById("page")!.hidden = false;
     const recentEl = document.getElementById("recent")!, moreEl = document.getElementById("more")!;
     const games: any[] = [], els = new Map<string, HTMLElement>();
-    let total = 0, nextGames: any[] = [];
+    let total = 0, nextOffset = 0, nextGames: any[] = [];
 
     function renderRecent() {
-      const vis = games;
-      recentEl.replaceChildren(...vis.map((g) => { if (!els.has(g.key)) els.set(g.key, summaryEl(g)); return els.get(g.key)!; }));
+      recentEl.replaceChildren(...games.map((g) => { if (!els.has(g.key)) els.set(g.key, summaryEl(g)); return els.get(g.key)!; }));
       // Same day as the game above: drop the repeated date, light rule.
       [...recentEl.children].forEach((c, k) => c.classList.toggle("same", k > 0 && (c as HTMLElement).dataset.date === (recentEl.children[k - 1] as HTMLElement).dataset.date));
-      if (!vis.length && total === 0) recentEl.innerHTML = '<p class="ag" style="color:var(--mu);margin:0">No finished games for these rivals yet.</p>';
-      const left = total - games.length;
-      moreEl.innerHTML = left > 0 ? `<button type="button" class="more" id="moreBtn">Show more</button>` : "";
+      if (!games.length && nextOffset >= total) recentEl.innerHTML = '<p class="ag" style="color:var(--mu);margin:0">Nothing to report yet.</p>';
+      moreEl.innerHTML = nextOffset < total ? `<button type="button" class="more" id="moreBtn">Show more</button>` : "";
       document.getElementById("moreBtn")?.addEventListener("click", loadMore);
     }
 
@@ -59,11 +58,16 @@ import Layout from "../layouts/Layout.astro";
       if (btn) { btn.disabled = true; btn.textContent = "Loading"; }
       const first = games.length;
       try {
-        const res = await fetch(`/api/recent?rivals=${rivals.join(",")}&offset=${games.length}&limit=${PAGE}`);
-        if (!res.ok) throw new Error(String(res.status));
-        const d = await res.json();
-        total = d.total;
-        d.games.forEach((g: any) => { if (!games.some((x) => x.key === g.key)) games.push(g); });
+        // A page can come back thin (rival wins with nothing bad to say are skipped), so keep going until there's something new.
+        let added = 0;
+        do {
+          const res = await fetch(`/api/recent?${q}&offset=${nextOffset}&limit=${PAGE}`);
+          if (!res.ok) throw new Error(String(res.status));
+          const d = await res.json();
+          total = d.total;
+          nextOffset = d.nextOffset;
+          d.games.forEach((g: any) => { if (!games.some((x) => x.key === g.key)) { games.push(g); added++; } });
+        } while (added < 3 && nextOffset < total);
         renderRecent();
         const firstNew = recentEl.children[first] as HTMLElement | undefined;
         if (first && firstNew) { firstNew.tabIndex = -1; firstNew.focus({ preventScroll: true }); }
@@ -81,25 +85,26 @@ import Layout from "../layouts/Layout.astro";
       refreshing = true;
       lastRefresh = Date.now();
       try {
-        const d = await (await fetch(`/api/recent?rivals=${rivals.join(",")}&offset=0&limit=${PAGE}`)).json();
+        const d = await (await fetch(`/api/recent?${q}&offset=0&limit=${PAGE}`)).json();
         const fresh = d.games.filter((g: any) => !games.some((x) => x.key === g.key));
-        if (fresh.length) { games.unshift(...fresh); total = d.total; renderRecent(); }
+        if (fresh.length) { games.unshift(...fresh); total = d.total; nextOffset += fresh.length; renderRecent(); }
       } catch { /* next change will retry */ }
       refreshing = false;
     }
 
     async function loadNext() {
       try {
-        nextGames = await (await fetch(`/api/next?rivals=${rivals.join(",")}`)).json();
+        nextGames = await (await fetch(`/api/next?${q}`)).json();
       } catch { nextGames = []; }
       const day = (iso: string) => new Date(iso).toLocaleDateString("en-US", { weekday: "short" });
       const time = (iso: string) => new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+      const r = rng(7);
       document.getElementById("next")!.innerHTML = nextGames.length
-        ? nextGames.map((n) => `<div class="nx" style="--c:${chip(n.rival)}"><div class="mono">${day(n.startUTC)} · ${time(n.startUTC)}</div><p class="m"><b>${n.rival}</b> ${n.home ? "vs" : "at"} <span class="op">${n.opp}</span></p>${n.facts.map((f: string) => `<p class="f">${esc(f)}</p>`).join("")}</div>`).join("")
+        ? nextGames.map((n) => `<div class="nx" style="--c:${chip(n.rival)}"><div class="mono">${day(n.startUTC)} · ${time(n.startUTC)}</div><p class="m">${newsMark(n.role, r)} <b>${n.rival}</b> ${n.home ? "vs" : "at"} <span class="op">${n.opp}</span></p>${n.facts.map((f: string) => `<p class="f">${esc(f)}</p>`).join("")}</div>`).join("")
         : '<p style="margin:0;color:var(--mu)">No games scheduled.</p>';
     }
 
-    startLive(document.getElementById("live")!, rivals, {
+    startLive(document.getElementById("live")!, rivals, favs, {
       replayDate: /^\d{4}-\d{2}-\d{2}$/.test(params.get("replay") || "") ? params.get("replay")! : undefined,
       at: +(params.get("at") || 0),
       onFinals: (keys: string[]) => { if (keys.some((k) => !games.some((g) => g.key === k))) refreshTop(); },

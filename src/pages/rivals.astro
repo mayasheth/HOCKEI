@@ -8,10 +8,10 @@ const byDivision = DIVISIONS.map((d) => ({
 }));
 ---
 
-<Layout title="HOCKEI · Rivals" activePage="rivals">
+<Layout title="HOCKEI · Teams" activePage="rivals">
   <div class="sec" style="margin-top:26px">
     <div style="display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap">
-      <p class="deck" style="margin:0">Pick the teams you love to hate.</p>
+      <p class="deck" style="margin:0">Tap a team once for a rival, twice for a favorite.</p>
       <div style="display:flex;gap:18px;align-items:center">
         <span class="mono" id="count" aria-live="polite"></span>
         <button type="button" class="navlink" id="clear" style="background:none;border:0;cursor:pointer;padding:0">Clear all</button>
@@ -23,8 +23,8 @@ const byDivision = DIVISIONS.map((d) => ({
         <section aria-labelledby={`d-${d.name}`}>
           <h2 class="kick" id={`d-${d.name}`}>{d.name}</h2>
           {d.teams.map(([ab, t]) => (
-            <button type="button" class="pick" data-team={ab} aria-pressed="false" style={`--c:${t[2]}`}>
-              <span class="sw"></span><span class="nm">{t[0]}</span><span class="ab">{ab}</span>
+            <button type="button" class="pick" data-team={ab} data-name={t[0]} data-role="" style={`--c:${t[2]}`}>
+              <span class="sw"></span><span class="nm">{t[0]}</span><span class="ab"><span class="role"></span>{ab}</span>
             </button>
           ))}
         </section>
@@ -34,15 +34,22 @@ const byDivision = DIVISIONS.map((d) => ({
 </Layout>
 
 <script>
-  import { getSelectedRivals, toggleRival, clearAllRivals } from "../lib/store.js";
+  import { roleOf, cycleRole, clearAll, getSelectedRivals, getFavorites } from "../lib/store.js";
 
   const picks = [...document.querySelectorAll<HTMLButtonElement>(".pick")];
-  function sync(sel: Set<string>) {
-    picks.forEach((b) => b.setAttribute("aria-pressed", String(sel.has(b.dataset.team!))));
-    document.getElementById("count")!.textContent = sel.size ? `${sel.size} ${sel.size === 1 ? "rival" : "rivals"}` : "No rivals yet";
+  const LABEL: Record<string, string> = { rival: "Rival", fav: "Favorite", "": "" };
+  function sync() {
+    picks.forEach((b) => {
+      const role = roleOf(b.dataset.team!) || "";
+      b.dataset.role = role;
+      b.querySelector(".role")!.textContent = LABEL[role];
+      b.setAttribute("aria-label", `${b.dataset.name}${role ? `, ${LABEL[role].toLowerCase()}` : ""}. Tap to change.`);
+    });
+    const r = getSelectedRivals().size, f = getFavorites().size;
+    document.getElementById("count")!.textContent = r || f ? [r ? `${r} ${r === 1 ? "rival" : "rivals"}` : "", f ? `${f} ${f === 1 ? "favorite" : "favorites"}` : ""].filter(Boolean).join(" · ") : "No teams yet";
     window.dispatchEvent(new Event("rivals-changed"));
   }
-  picks.forEach((b) => b.addEventListener("click", () => sync(toggleRival(b.dataset.team!))));
-  document.getElementById("clear")!.addEventListener("click", () => sync(clearAllRivals()));
-  sync(getSelectedRivals());
+  picks.forEach((b) => b.addEventListener("click", () => { cycleRole(b.dataset.team!); sync(); }));
+  document.getElementById("clear")!.addEventListener("click", () => { clearAll(); sync(); });
+  sync();
 </script>
