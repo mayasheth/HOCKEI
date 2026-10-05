@@ -4,7 +4,7 @@
 // live or about to start, 5 min otherwise, and pauses while the tab is hidden.
 // `?replay=YYYY-MM-DD` replays a past night instead.
 import { esc } from "./pen.js";
-import { ORD, feedCard, sbRow, refreshAgo } from "./render.js";
+import { ORD, feedCard, soCard, soGood, sbRow, refreshAgo } from "./render.js";
 
 const LIVE = new Set(["LIVE", "CRIT"]);
 const FINAL = new Set(["OFF", "FINAL"]);
@@ -25,11 +25,14 @@ const status = (g) => {
   if (FINAL.has(g.state)) return g.lp === "OT" ? "Final · OT" : g.lp === "SO" ? "Final · SO" : "Final";
   if (g.state === "FUT") return localTime(g.startUTC);
   if (g.state === "PRE") return "Pre-game";
+  if (g.ptype === "SO") return "Shootout";
   if (g.clock?.inIntermission) return `${ORD(g.period)} INT`;
   return `${ORD(g.period)} · ${g.clock?.timeRemaining?.replace(/^0(\d)/, "$1") || ""}`;
 };
 // Rough wall-clock time of a goal scored before the page first saw it: puck drop ~8 min after
 // the listed start, ~1.6 real minutes per game minute, two 18-minute intermissions.
+// Shootout attempts get a game time just past overtime, about 40 s apart.
+const soT = (x) => 65 + x.n * 0.6;
 const estWall = (g, x) => Date.parse(g.startUTC) + (8 + x.t * 1.6 + 18 * (Math.min(x.per, 3) - 1)) * 60000;
 // When this browser first saw each goal, so "min ago" stays exact across reloads.
 const SEEN_KEY = "hockei-goal-seen";
@@ -65,13 +68,13 @@ export function startLive(root, rivals, favs, { replayDate, at = 0, onFinals, ne
   const firstSeen = replayDate ? {} : seenTimes();
   setInterval(() => refreshAgo(root), 30000);
 
-  function addCard(g, x, isNew, key, favG) {
+  function addCard(g, x, isNew, key, favG, so = false) {
     const id = `${g.id}-${x.id}`;
     let at = firstSeen[id], approx = false;
     if (!at && isNew) at = firstSeen[id] = key;
     if (!at) { at = Math.min(key, Date.now()); approx = true; }
     if (!replayDate) saveSeen(firstSeen);
-    const card = feedCard(g, x, isNew, at, approx, favG);
+    const card = (so ? soCard : feedCard)(g, x, isNew, at, approx, favG);
     card._k = at;
     const before = [...feed.children].find((c) => c._k < at);
     feed.insertBefore(card, before || null);
@@ -117,9 +120,16 @@ export function startLive(root, rivals, favs, { replayDate, at = 0, onFinals, ne
           newGoal = true;
           if (!first) sr.textContent = `${src.role === "fav" ? "Goal for" : "Goal against"} ${src.rival}: ${x.name}, ${ORD(x.per)} period ${x.clock}.`;
         }
+        for (const x of (src.so || []).filter((x) => soGood(src, x))) {
+          if (seen.has(`${id}-${x.id}`)) continue;
+          const t = { t: soT(x), per: 4 };
+          addCard(src, x, !first, !first ? wall : replayDate ? wall - (100 - t.t) * 1000 : estWall(src, t), favE && src.role !== "fav" ? favE : undefined, true);
+          newGoal = true;
+          if (!first) sr.textContent = `Shootout, round ${x.rd}: ${x.name} (${x.team}), ${x.res === "goal" ? "scored" : x.res === "save" ? "saved" : "no goal"}.`;
+        }
       }
       // Goals taken back on review.
-      const ids = new Set(sources.flatMap((e) => e.goals.map((x) => String(x.id))));
+      const ids = new Set(sources.flatMap((e) => [...e.goals, ...(e.so || [])].map((x) => String(x.id))));
       feed.querySelectorAll(`[data-game="${id}"]`).forEach((c) => { if (!ids.has(c.dataset.goal)) { c.dataset.gone = "1"; c.remove(); seen.delete(`${id}-${c.dataset.goal}`); } });
     }
     first = false;
@@ -160,7 +170,7 @@ export function startLive(root, rivals, favs, { replayDate, at = 0, onFinals, ne
     const t0 = Math.min(...games.map((g) => Date.parse(g.startUTC)));
     const INT = 7;
     const sims = games.map((g) => {
-      const endT = Math.max(60, ...g.goals.map((x) => x.t), ...g.ours.map((t) => t));
+      const endT = g.so?.length ? soT(g.so[g.so.length - 1]) + 0.6 : Math.max(60, ...g.goals.map((x) => x.t), ...g.ours.map((t) => t));
       return { g, off: (Date.parse(g.startUTC) - t0) / 60000 / 3, endT };
     });
     // Regular-season overtime follows the third with no intermission.
@@ -176,12 +186,12 @@ export function startLive(root, rivals, favs, { replayDate, at = 0, onFinals, ne
       w += 0.3;
       const frame = sims.map(({ g, off, endT }) => {
         const c = clockAt(w - off, endT), t = c.t;
-        const goals = g.goals.filter((x) => x.t <= t), ours = g.ours.filter((x) => x <= t);
+        const goals = g.goals.filter((x) => x.t <= t), ours = g.ours.filter((x) => x <= t), so = (g.so || []).filter((x) => soT(x) <= t);
         const st = c.pre ? "PRE" : c.fin ? "OFF" : "LIVE";
         const left = c.per ? (c.per <= 3 ? 20 * c.per - t : 0) : 0;
-        const label = c.pre ? "Pre-game" : c.fin ? (g.lp === "OT" ? "Final · OT" : g.lp === "SO" ? "Final · SO" : "Final") : c.int ? `${ORD(c.int)} INT` : c.per === 4 ? `OT · ${Math.floor(65 - t)}:${String(Math.round(((65 - t) % 1) * 60) % 60).padStart(2, "0")}` : `${ORD(c.per)} · ${Math.floor(left)}:${String(Math.round((left % 1) * 60) % 60).padStart(2, "0")}`;
+        const label = c.pre ? "Pre-game" : c.fin ? (g.lp === "OT" ? "Final · OT" : g.lp === "SO" ? "Final · SO" : "Final") : c.int ? `${ORD(c.int)} INT` : c.per === 4 && t > 65 ? "Shootout" : c.per === 4 ? `OT · ${Math.floor(65 - t)}:${String(Math.round(((65 - t) % 1) * 60) % 60).padStart(2, "0")}` : `${ORD(c.per)} · ${Math.floor(left)}:${String(Math.round((left % 1) * 60) % 60).padStart(2, "0")}`;
         const fav = g.role === "fav";
-        return { ...g, state: st, status: label, goals, ours, os: c.fin ? g.os : fav ? ours.length : goals.length, rs: c.fin ? g.rs : fav ? goals.length : ours.length };
+        return { ...g, state: st, status: label, goals, ours, so, os: c.fin ? g.os : fav ? ours.length : goals.length, rs: c.fin ? g.rs : fav ? goals.length : ours.length };
       });
       const hold = update(frame, Date.now(), replayDate);
       if (frame.every((g) => g.state === "OFF")) return;

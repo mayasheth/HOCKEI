@@ -4,7 +4,7 @@
 // one-goal games, blowouts, weekday droughts).
 
 // Bump when rules change so cached game summaries are rebuilt.
-export const FACTS_VERSION = 8;
+export const FACTS_VERSION = 10;
 
 export const nth = (n) => n + (n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th");
 export const seasonLabel = (s) => `${s.slice(0, 4)}–${s.slice(6)}`;
@@ -41,6 +41,19 @@ function weekdayDrought(rows, iso) {
   const n = trailing(on, (r) => r.res !== "W");
   return n < on.length ? { day, n, since: on[on.length - n - 1].date } : null;
 }
+// Shootouts: how one side's shooters did, and the season's shootout record.
+const MISS = { "hit-left-post": "hit the post", "hit-right-post": "hit the post", "hit-crossbar": "hit the crossbar" };
+export const failWord = (x) => (x.res === "save" ? "saved" : x.res === "fail" ? "no shot" : MISS[x.why] || "missed the net");
+function failSummary(xs) {
+  const by = new Map();
+  xs.forEach((x) => by.set(failWord(x), (by.get(failWord(x)) || 0) + 1));
+  return [...by].map(([w, n]) => `${n} ${w}`).join(", ");
+}
+function soRecord(rows, row) {
+  const so = run(rows, row).filter((r) => r.lp === "SO");
+  return { w: so.filter((r) => r.res === "W").length, l: so.filter((r) => r.res !== "W").length };
+}
+
 const shortDate = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 
 export function factsFor({ team, row, upto, detail, vs, since, goalie }) {
@@ -54,6 +67,15 @@ export function factsFor({ team, row, upto, detail, vs, since, goalie }) {
   const place = run(upto, row).filter((r) => r.home === row.home);
   const placeStreak = trailing(place, (r) => r.res !== "W");
   if (lost && placeStreak >= 3 && placeStreak !== winless) add(nth(placeStreak), `Straight ${row.home ? "home" : "road"} game without a win`);
+
+  if (lost && row.lp === "SO" && detail.so?.length) {
+    const ours = detail.so.filter((x) => x.byTeam), theirs = detail.so.filter((x) => !x.byTeam);
+    const made = ours.filter((x) => x.res === "goal").length, beat = theirs.filter((x) => x.res === "goal");
+    add(`${made}/${ours.length}`, `${team} shooters in the shootout`, failSummary(ours.filter((x) => x.res !== "goal")));
+    if (beat.length >= 2) add(`${beat.length}/${theirs.length}`, `Shootout attempts that beat ${beat[0].goalie || "the goalie"}`);
+    const { w, l } = soRecord(upto, row);
+    if (w + l >= 2 && l >= w) add(`${w}–${l}`, "Shootout record this season");
+  }
 
   if (row.gf === 0) add(nth(upto.filter((r) => r.gf === 0).length), `Shutout since ${S}`);
 
@@ -149,6 +171,15 @@ export function factsForFav({ team, row, upto, detail, vs, since, goalie }) {
   const place = trailing(run(upto, row).filter((r) => r.home === row.home), (r) => r.res === "W");
   if (place >= 3 && place !== streak) add(nth(place), `Straight ${row.home ? "home" : "road"} win`);
 
+  if (row.lp === "SO" && detail.so?.length) {
+    const ours = detail.so.filter((x) => x.byTeam), theirs = detail.so.filter((x) => !x.byTeam);
+    const made = ours.filter((x) => x.res === "goal"), stops = theirs.filter((x) => x.res !== "goal");
+    if (made.length * 2 >= ours.length) add(`${made.length}/${ours.length}`, `${team} shooters in the shootout`, made.map((x) => x.name).join(", "));
+    if (theirs.length) add(`${stops.length}/${theirs.length}`, `Shootout attempts stopped${theirs[0].goalie ? `, ${theirs[0].goalie}` : ""}`, failSummary(stops));
+    const { w, l } = soRecord(upto, row);
+    if (w + l >= 2 && w > l) add(`${w}–${l}`, "Shootout record this season");
+  }
+
   if (row.ga === 0) add(nth(upto.filter((r) => r.ga === 0).length), `Shutout since ${S}`, goalie ? `${goalie.saves} saves, ${goalie.name}` : "");
   else if (goalie && goalie.shots >= 20 && goalie.sv >= 0.94) {
     const best = goalie.since === null ? `His best since ${S}` : goalie.since ? `His best since ${shortDate(goalie.since)}` : "";
@@ -183,6 +214,8 @@ export function factsForFav({ team, row, upto, detail, vs, since, goalie }) {
   if (worst >= 2) deck = `Came back from ${at}.`;
   const ot = goals.find((g) => g.per >= 4);
   if (ot) deck = `${deck ? deck + " " : ""}${ot.name} won it ${ot.clock} into overtime.`;
+  const decider = row.lp === "SO" ? [...(detail.so || [])].reverse().find((x) => x.byTeam && x.res === "goal") : null;
+  if (decider) deck = `${deck ? deck + " " : ""}${decider.name} scored the shootout winner in round ${decider.rd}.`;
   return { stats: out.slice(0, 4), deck };
 }
 

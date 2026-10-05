@@ -2,7 +2,7 @@
 // Each game entry has a role: "rival" (goals against, red pen) or "fav" (goals for, blue pen).
 // A favorite scoring on a rival is one "both" item carrying both entries.
 import { teamName, chip, inks } from "../teams.js";
-import { nth } from "../facts.js";
+import { nth, failWord } from "../facts.js";
 import { esc, hash, rng, penSVG, circled, dashed, newsMark } from "./pen.js";
 import { GoalDrawing, loadTrack, frameBox, onceVisible, reduceMotion } from "./draw.js";
 
@@ -41,6 +41,13 @@ export function goalContext(g, x) {
   return out.slice(0, 2).join(" ");
 }
 const tagOf = (x) => STR[x.tag] || "";
+
+// Shootout attempts that are good news: a rival's shooter failing or its goalie beaten,
+// a favorite's shooter scoring or its goalie making the stop.
+export const soGood = (g, x) => (isFav(g) ? x.byTeam === (x.res === "goal") : x.byTeam !== (x.res === "goal"));
+const soResult = (x) => (x.res === "goal" ? "Goal" : x.res === "fail" ? "No shot" : failWord(x)[0].toUpperCase() + failWord(x).slice(1));
+// The last attempt of a finished shootout decided it.
+const soDecider = (g, x) => g.so[g.so.length - 1] === x && g.os !== g.rs;
 const timeLine = (x, r, delay, good) => `${otWinner(x) ? `${otTag(r, delay, good)} · ${x.clock} · Winner` : `${ORD(x.per)} · ${x.clock}`}${tagOf(x) ? ` · ${tagOf(x)}` : ""}`;
 
 /* ---------- Recent: game summaries ---------- */
@@ -63,6 +70,15 @@ function bothStats(rivalStats, favStats, r) {
   const bad = rivalStats.map((s) => ({ ...s, mark: newsMark("rival", r) + " " })), good = favStats.map((s) => ({ ...s, mark: newsMark("fav", r) + " " }));
   const pick = [...bad.slice(0, 2), ...good.slice(0, 2)];
   return [...pick, ...bad.slice(2), ...good.slice(2)].slice(0, 4);
+}
+
+// Every shootout attempt in order; the good-news ones in full ink, the decider underlined.
+// Past three rounds, only the good-news attempts are listed.
+function soList(g, r) {
+  const good = isFav(g), rounds = Math.max(...g.so.map((x) => x.rd));
+  const shown = rounds > 3 ? g.so.filter((x) => soGood(g, x)) : g.so;
+  const li = shown.map((x) => `<li class="${soGood(g, x) ? "" : "dim"}"><span class="t mono">Rd ${x.rd}</span><span class="nm">${soDecider(g, x) && soGood(g, x) ? `<span class="pw">${esc(x.name)}${penSVG("under2", r, "left:-2px;bottom:-6px;width:calc(100% + 4px);height:7px", 1.6, 1.4, good)}</span>` : esc(x.name)} <span class="mono tag">${x.team}</span></span><span class="sc">${soResult(x)}</span></li>`).join("");
+  return `<div class="solist"><div class="mono" style="margin-bottom:6px">Shootout${rounds > 3 ? ` · ${rounds} rounds` : ""}</div><ol class="glist ag">${li}</ol></div>`;
 }
 
 export function summaryEl(item) {
@@ -102,7 +118,8 @@ export function summaryEl(item) {
     <h3 class="sr">${esc(srText)}</h3>${top}
     ${deck ? `<p class="deck">${esc(deck)}</p>` : ""}
     ${statBlocks}
-    ${rows.length ? `<div class="goals"><div class="multi"></div><div><div class="mono" style="margin-bottom:6px">${label}</div><ol class="glist ag"></ol></div></div>` : ""}</div>`;
+    ${rows.length ? `<div class="goals"><div class="multi"></div><div><div class="mono" style="margin-bottom:6px">${label}</div><ol class="glist ag"></ol></div></div>` : ""}
+    ${g.so?.length ? soList(g, r) : ""}</div>`;
   const multi = el.querySelector(".multi"), list = el.querySelector(".glist"), ds = [];
   const pair = both ? [inks(favG.rival)[0], inks(rivalG.rival)[0]] : undefined;
   rows.forEach((z, k) => {
@@ -187,6 +204,34 @@ export function feedCard(g, x, isNew, at, approx, favG) {
     if (x.ppt && ++tries < 20) setTimeout(() => { if (!el.dataset.gone) attempt(); }, 60000);
   };
   attempt();
+  return el;
+}
+
+// Live shootout item: a smaller, text-only card for each good-news attempt.
+export function soCard(g, x, isNew, at, approx, favG) {
+  const both = !!favG && !isFav(g), good = isFav(g);
+  const r = rng(hash(`${g.key}|${x.id}|feed`)), last = soDecider(g, x);
+  const el = document.createElement("article");
+  el.className = "goal so notrack" + (isNew ? " new" : "");
+  el.dataset.game = String(g.id);
+  el.dataset.goal = x.id;
+  const kind = both ? "both" : good ? "fav" : "rival";
+  const delay = isNew ? 0.9 : 0;
+  const pen = (on, fav) => (on ? penSVG("under2", r, "left:-2px;bottom:-8px;width:calc(100% + 4px);height:8px", 2, delay, fav) : "");
+  const miss = x.res !== "goal" && x.res !== "save";
+  // Heading from the followed team's side; for "both", the favorite's side follows.
+  const heads = [];
+  if (good) heads.push(x.byTeam ? ["Shootout goal for", g.rival] : miss ? ["Shootout miss", g.opp] : ["Shootout save for", g.rival]);
+  else heads.push(x.byTeam ? [miss ? "Shootout miss" : "Shootout save against", g.rival] : ["Shootout goal against", g.rival]);
+  if (both && (!x.byTeam || x.res === "save")) heads.push([x.byTeam ? "Shootout save for" : "Shootout goal for", favG.rival]);
+  const head = heads.map(([w, t], k) => `<div class="${k ? "who2" : "who"}"><span class="pw">${w}${pen(last && k === 0, good)}</span> <span class="whoteam">${teamName(t)}</span></div>`).join("");
+  const ctx = x.res === "goal" ? `Beat ${x.goalie || "the goalie"}.` : x.res === "save" ? `Stopped by ${x.goalie || "the goalie"}.` : x.res === "fail" ? "Lost the puck without a shot." : `${failWord(x)[0].toUpperCase()}${failWord(x).slice(1)}.`;
+  el.innerHTML = `<div>
+    <div class="kick" style="display:flex;align-items:center;gap:8px;color:var(--ink2)">${newsMark(kind, r, isNew ? 0.3 : 0)}<i style="width:9px;height:9px;display:block;background:${chip(g.rival)}"></i>${g.rival} vs ${g.opp}<span class="mono ago" data-at="${at}" data-approx="${approx ? 1 : 0}">${ago(at, approx)}</span></div>
+    <div class="mono" style="margin-top:8px">Shootout · Round ${x.rd}</div>
+    ${head}
+    <div class="by">${esc(x.name)} <span>${x.team}</span></div>
+    <p class="ctx">${esc(ctx)}${last ? " Ends the shootout." : ""}</p></div>`;
   return el;
 }
 

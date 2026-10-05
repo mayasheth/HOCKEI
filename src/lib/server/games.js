@@ -48,18 +48,32 @@ async function playByPlay(id) {
   return p;
 }
 
+// Shootout attempts: a goal, a save, a shot that missed the net, or no shot at all.
+const SO_RES = { goal: "goal", "shot-on-goal": "save", "missed-shot": "miss", "failed-shot-attempt": "fail" };
+
 // One game's scoring sheet from `team`'s side. side "against": `goals` are the goals it allowed
 // and `ours` its own goal times (rival coverage). side "for": `goals` are its own goals and `ours`
 // the opponent's goal times (favorite coverage). rs/os are always team/opponent scores.
+// Shootout attempts go in `so` (both sides, in order) and never count as goals.
 export async function detail(id, team, side = "against") {
   const pbp = await playByPlay(id);
   const home = pbp.homeTeam.abbrev === team;
   const me = home ? pbp.homeTeam : pbp.awayTeam, op = home ? pbp.awayTeam : pbp.homeTeam;
   const names = new Map(pbp.rosterSpots.map((r) => [r.playerId, [r.firstName.default, r.lastName.default]]));
-  const goals = [], ours = [];
+  const goals = [], ours = [], so = [];
   let mine = 0, theirs = 0;
   for (const e of pbp.plays) {
-    if (e.typeDescKey !== "goal" || e.periodDescriptor.periodType === "SO") continue;
+    if (e.periodDescriptor.periodType === "SO") {
+      const res = SO_RES[e.typeDescKey], d = e.details || {};
+      if (!res) continue;
+      const byTeam = d.eventOwnerTeamId === me.id, shooter = names.get(d.scoringPlayerId || d.shootingPlayerId) || ["", "Unknown"];
+      so.push({
+        id: `so${e.eventId}`, n: so.length + 1, sort: e.sortOrder, byTeam, team: byTeam ? me.abbrev : op.abbrev,
+        name: shooter[1], goalie: names.get(d.goalieInNetId)?.[1] || null, res, why: d.reason || null,
+      });
+      continue;
+    }
+    if (e.typeDescKey !== "goal") continue;
     const per = e.periodDescriptor.number, t = tmin(per, e.timeInPeriod), d = e.details || {};
     const byTeam = d.eventOwnerTeamId === me.id;
     if (byTeam !== (side === "for")) { byTeam ? mine++ : theirs++; ours.push(t); continue; }
@@ -77,6 +91,8 @@ export async function detail(id, team, side = "against") {
     });
     byTeam ? mine++ : theirs++;
   }
+  // n: attempt number overall; rd: the shooter's team's round.
+  so.sort((a, b) => a.sort - b.sort).forEach((x, i) => { x.n = i + 1; x.rd = so.slice(0, i + 1).filter((y) => y.byTeam === x.byTeam).length; delete x.sort; });
   const state = pbp.gameState, lp = pbp.gameOutcome?.lastPeriodType || pbp.periodDescriptor?.periodType || "REG";
   const final = isFinal(state);
   // Severity: shorthanded, overtime, or a late winner is the biggest; power play, empty net or any winner next.
@@ -90,7 +106,7 @@ export async function detail(id, team, side = "against") {
   return {
     id, rival: team, opp: op.abbrev, home, state, date: pbp.gameDate, startUTC: pbp.startTimeUTC,
     rs: me.score ?? mine, os: op.score ?? theirs, lp, period: pbp.periodDescriptor?.number || 0,
-    clock: pbp.clock || null, goals, ours,
+    clock: pbp.clock || null, ptype: pbp.periodDescriptor?.periodType || null, goals, ours, so,
   };
 }
 
@@ -138,22 +154,24 @@ export async function finishedGame(team, id, role = "rival") {
     const { stats, deck } = role === "fav" ? factsForFav(args) : factsFor(args);
     return {
       key: `${role}-${team}-${id}`, role, id, rival: team, opp: row.opp, date: row.date, kicker: kickerFor(row, sch.rows),
-      rs: d.rs, os: d.os, goals: strip(d.goals), ours: d.ours, stats, deck,
+      rs: d.rs, os: d.os, goals: strip(d.goals), ours: d.ours, so: d.so, stats, deck,
     };
   });
 }
 
 // Finished games newest first, paged over candidates: rival losses, favorite wins, and rival
 // wins that still carry a bad stat. A favorite beating a rival is one "both" item.
-// Favorite losses are never shown.
+// Favorite losses are never shown, and nothing before the current season, so a quiet stretch
+// can't pull in old games.
 export async function recent(rivals, favs, offset, limit) {
   const byGame = new Map();
   const add = (t, r, role) => {
     if (!byGame.has(r.id)) byGame.set(r.id, { id: r.id, startUTC: r.startUTC, parts: [] });
     byGame.get(r.id).parts.push({ t, r, role });
   };
-  for (const t of rivals) (await schedule(t)).rows.filter((r) => r.res).forEach((r) => add(t, r, "rival"));
-  for (const t of favs) (await schedule(t)).rows.filter((r) => r.res === "W").forEach((r) => add(t, r, "fav"));
+  const done = async (t) => { const s = await schedule(t); return s.rows.filter((r) => r.res && r.season === s.current); };
+  for (const t of rivals) (await done(t)).forEach((r) => add(t, r, "rival"));
+  for (const t of favs) (await done(t)).filter((r) => r.res === "W").forEach((r) => add(t, r, "fav"));
   // A favorite's win over a rival leaves the rival's row as a loss; a rival's win over a favorite is dropped.
   const cands = [...byGame.values()].filter((c) => !(c.parts.length === 1 && c.parts[0].role === "rival" && c.parts[0].r.res === "W" && favs.includes(c.parts[0].r.opp)));
   cands.sort((a, b) => b.startUTC.localeCompare(a.startUTC) || a.id - b.id);

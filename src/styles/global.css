@@ -181,6 +181,12 @@ svg.pending .rink path { stroke-dasharray: 3 5; }
 .glist .t { font-size: 11px; }
 .glist .tag { font-size: 10px; margin-left: 4px; }
 .glist .sc { color: var(--mu); font-size: 13px; }
+.glist li.dim { opacity: .45; }
+.solist { margin-top: 18px; max-width: 420px; }
+.goal.so { padding: 12px 0; }
+.goal.so .who { font-size: clamp(20px, 2.2vw, 26px); }
+.goal.so .who2 { font-size: clamp(16px, 1.7vw, 20px); }
+.goal.so .ctx { font-size: 16px; }
 .multi figcaption { display: flex; flex-direction: column; gap: 1px; margin-top: 6px; }
 .multi figcaption .nm { font-weight: 600; font-size: 14px; }
 .more { appearance: none; border: 0; background: none; color: var(--ink); font-weight: 800; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; min-height: 44px; padding: 0; border-top: 3px solid var(--ink); width: 100%; text-align: left; cursor: pointer; }

@@ -7,7 +7,9 @@
 - [ ] Watch a real live night (polling, sprite delays, overturned goals, OT/SO, two rivals playing each other)
 - [ ] Check on a real phone (headless Chrome can't go below 500 px)
 - [ ] Cold-start speed of /api/recent on Vercel: 1.8 s for 6 games with 4 rivals (Oct 4); move to a nightly snapshot (option B) if it grows
-- [ ] Shootout goals are skipped; decide how a shootout loss should read
+- [x] Shootouts: facts, summary list, small live cards; attempts never count as goals (Oct 5 2026)
+- [x] Recent limited to the current season (Oct 5 2026)
+- [ ] Live shootout: "Ends the shootout" shows only if the final state arrives in the same poll as the last attempt
 - [x] Remove Tailwind from config and dependencies, and unused public/logos (Oct 5 2026; old docs/ demos still point at the logos)
 - [x] Favorites: good news for favorites, "both" items when they beat a rival (Oct 5 2026)
 
