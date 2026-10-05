@@ -3,7 +3,7 @@
 Schadenfreude app for NHL fans to track negative events (losses, goals against) for rival teams. Web port of iOS app "Rival Watch".
 
 ## Tech Stack
-Astro (server output) + plain CSS + vanilla JS, deployed on Vercel. Tailwind is still configured but unused.
+Astro (server output) + plain CSS + vanilla JS, deployed on Vercel.
 
 ## Design ("late edition", Oct 2026)
 Dark newsprint, red editor's pen marks only on the worst events, skater-trail drawings from NHL tracking. Earnest, stat-bureau tone: no jokes (see memory). Fonts must have round i-dots: Schibsted Grotesk, Newsreader, Roboto Condensed, DM Mono. Score shown only when the rival lost or trails. Split-flap digits only on live scores. Strength tags: PPG, SHG, ENG. Mockups and their build scripts live in `handovers/data/` (git-ignored); `hockei-round11.html` is the reference.
